@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZOII · Panel de servicio — Campaña Chedraui</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  :root{
+    --ink:#14162B;
+    --ink-soft:#6B6E85;
+    --indigo:#5862EB;
+    --indigo-deep:#3B41B0;
+    --indigo-pale:#EEEFFD;
+    --sun:#FFD25C;
+    --sun-deep:#E8AF2B;
+    --paper:#F5F5FB;
+    --card:#FFFFFF;
+    --line:#E5E5F1;
+    --green:#1F9C7D;
+    --green-pale:#E4F6F0;
+    --coral:#E75B54;
+    --coral-pale:#FCEAE9;
+    --rose:#C9577A;
+    --rose-pale:#FBEAF0;
+    --radius:16px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.display{
+    font-family:'Space Grotesk',system-ui,sans-serif;
+    letter-spacing:-0.01em;
+  }
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  a{color:inherit;}
+
+  /* ---------- Header ---------- */
+  header.top{
+    background:var(--ink);
+    color:#fff;
+    padding:28px clamp(18px,4vw,48px) 0;
+    position:relative;
+    overflow:hidden;
+  }
+  .top-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:24px;
+    flex-wrap:wrap;
+    position:relative;
+    z-index:2;
+  }
+  .brand{display:flex;align-items:center;gap:16px;}
+  .brand img{height:34px;width:auto;display:block;}
+  .brand-divider{width:1px;height:32px;background:rgba(255,255,255,0.18);}
+  .brand-text h1{font-size:19px;margin:0 0 2px;font-weight:600;color:#fff;}
+  .brand-text p{margin:0;font-size:13px;color:rgba(255,255,255,0.55);}
+  .period-chip{
+    display:flex;align-items:center;gap:8px;
+    background:rgba(255,255,255,0.08);
+    border:1px solid rgba(255,255,255,0.14);
+    color:#fff;
+    padding:9px 16px;
+    border-radius:100px;
+    font-size:13px;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .period-chip .dot{width:7px;height:7px;border-radius:50%;background:var(--sun);}
+
+  /* signature funnel strip */
+  .funnel{
+    margin-top:26px;
+    position:relative;
+    z-index:2;
+    padding-bottom:26px;
+  }
+  .funnel-label{
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.12em;
+    color:rgba(255,255,255,0.45);
+    margin-bottom:10px;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .funnel-track{
+    display:flex;
+    align-items:stretch;
+    height:54px;
+    border-radius:10px;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,0.12);
+  }
+  .funnel-seg{
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    padding:0 16px;
+    min-width:64px;
+    position:relative;
+    border-right:1px solid rgba(20,22,43,0.25);
+    transition:flex-grow .4s ease;
+  }
+  .funnel-seg:last-child{border-right:none;}
+  .funnel-seg .n{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;line-height:1;}
+  .funnel-seg .l{font-size:10.5px;letter-spacing:0.04em;margin-top:3px;opacity:0.85;}
+  .funnel-seg.programados{background:var(--indigo);color:#fff;}
+  .funnel-seg.concluidos{background:var(--sun);color:var(--ink);}
+  .funnel-seg.cancelados-momento{background:#3a3c5c;color:rgba(255,255,255,0.8);}
+  .funnel-seg.cancelados-posterior{background:#4d5070;color:rgba(255,255,255,0.8);}
+  .funnel-seg.vacio{background:#22254a;color:rgba(255,255,255,0.4);flex:1 1 auto !important;}
+
+  .bg-square{
+    position:absolute;
+    right:-40px;top:-60px;
+    width:260px;height:260px;
+    border:46px solid rgba(255,255,255,0.035);
+    border-radius:34px;
+    z-index:1;
+  }
+
+  /* ---------- Filter bar ---------- */
+  .filterbar{
+    position:sticky;top:0;z-index:20;
+    background:rgba(245,245,251,0.92);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+    padding:14px clamp(18px,4vw,48px);
+    display:flex;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .filterbar .fb-label{
+    font-size:11px;text-transform:uppercase;letter-spacing:0.1em;
+    color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;
+    margin-right:2px;
+  }
+  select.fbtn{
+    appearance:none;
+    background:#fff url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="6"><path d="M0 0l5 6 5-6z" fill="%236B6E85"/></svg>') no-repeat right 12px center;
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:8px 30px 8px 12px;
+    font-size:13px;
+    font-family:'Inter',sans-serif;
+    color:var(--ink);
+    cursor:pointer;
+    min-width:150px;
+  }
+  select.fbtn:focus{outline:2px solid var(--indigo);outline-offset:1px;}
+  .reset-btn{
+    border:1px solid var(--line);
+    background:#fff;
+    border-radius:9px;
+    padding:8px 14px;
+    font-size:13px;
+    cursor:pointer;
+    color:var(--indigo-deep);
+    font-weight:600;
+    margin-left:auto;
+  }
+  .reset-btn:hover{background:var(--indigo-pale);}
+  .count-pill{
+    font-size:12.5px;color:var(--ink-soft);
+    font-family:'IBM Plex Mono',monospace;
+  }
+
+  /* ---------- Layout ---------- */
+  main{padding:28px clamp(18px,4vw,48px) 60px;max-width:1360px;margin:0 auto;}
+  section{margin-bottom:34px;}
+  .section-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
+  .section-head h2{font-size:15px;margin:0;font-weight:600;}
+  .section-head .eyebrow{
+    font-size:10.5px;text-transform:uppercase;letter-spacing:0.12em;
+    color:var(--indigo-deep);font-family:'IBM Plex Mono',monospace;
+    display:block;margin-bottom:4px;
+  }
+  .section-head .note{font-size:12.5px;color:var(--ink-soft);}
+
+  /* KPI cards */
+  .kpi-grid{
+    display:grid;
+    grid-template-columns:repeat(6,1fr);
+    gap:12px;
+  }
+  .kpi{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px 16px 14px;
+    position:relative;
+    overflow:hidden;
+  }
+  .kpi .k-label{font-size:11.5px;color:var(--ink-soft);font-weight:500;margin-bottom:10px;}
+  .kpi .k-value{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:26px;line-height:1;}
+  .kpi .k-value sup{font-size:14px;font-weight:600;margin-left:1px;}
+  .kpi .k-sub{font-size:11.5px;color:var(--ink-soft);margin-top:6px;}
+  .kpi.accent-indigo{border-top:3px solid var(--indigo);}
+  .kpi.accent-green{border-top:3px solid var(--green);}
+  .kpi.accent-coral{border-top:3px solid var(--coral);}
+  .kpi.accent-sun{border-top:3px solid var(--sun-deep);}
+
+  /* Cards / charts */
+  .grid-2{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;}
+  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:20px 22px 16px;
+  }
+  .card h3{font-size:13.5px;margin:0 0 2px;font-weight:600;}
+  .card .sub{font-size:12px;color:var(--ink-soft);margin:0 0 14px;}
+  .chart-wrap{position:relative;}
+
+  /* legend chips */
+  .legend-row{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;}
+  .legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-soft);}
+  .legend-dot{width:9px;height:9px;border-radius:3px;display:inline-block;}
+
+  /* table */
+  .table-card{padding:0;overflow:hidden;}
+  .table-scroll{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:12.8px;min-width:900px;}
+  thead th{
+    text-align:left;
+    padding:12px 16px;
+    background:var(--indigo-pale);
+    color:var(--indigo-deep);
+    font-weight:600;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    position:sticky;top:0;
+    white-space:nowrap;
+  }
+  tbody td{padding:10px 16px;border-bottom:1px solid var(--line);white-space:nowrap;}
+  tbody tr:hover{background:var(--paper);}
+  .badge{
+    display:inline-block;padding:3px 9px;border-radius:100px;
+    font-size:11px;font-weight:600;
+  }
+  .badge.Concluido{background:var(--green-pale);color:var(--green);}
+  .badge.Programado{background:var(--indigo-pale);color:var(--indigo-deep);}
+  .badge.CanceladoAlMomento{background:var(--coral-pale);color:var(--coral);}
+  .badge.CanceladoPosterior{background:var(--rose-pale);color:var(--rose);}
+  .stars{color:var(--sun-deep);font-size:12px;letter-spacing:1px;}
+  .muted{color:var(--ink-soft);}
+
+  .table-toolbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:16px 22px;flex-wrap:wrap;gap:10px;
+  }
+
+  footer{
+    padding:26px clamp(18px,4vw,48px) 40px;
+    color:var(--ink-soft);
+    font-size:12px;
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;
+    border-top:1px solid var(--line);
+    max-width:1360px;margin:0 auto;
+  }
+  footer .zoii{font-weight:700;color:var(--indigo);}
+
+  @media (max-width:1000px){
+    .kpi-grid{grid-template-columns:repeat(3,1fr);}
+    .grid-2{grid-template-columns:1fr;}
+    .grid-3{grid-template-columns:1fr;}
+  }
+  @media (max-width:600px){
+    .kpi-grid{grid-template-columns:repeat(2,1fr);}
+    .funnel-seg .l{display:none;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto;}
+    .funnel-seg{transition:none;}
+  }
+  :focus-visible{outline:2px solid var(--indigo);outline-offset:2px;}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="bg-square" aria-hidden="true"></div>
+  <div class="top-row">
+    <div class="brand">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABhgAAAK7CAYAAAAA1YXSAAAACXBIWXMAAC4jAAAuIwF4pT92AAAgAElEQVR4nOzdf4xl533f968pUiJFUjMkL2mJErBD2IXs/JpBgLZBEmPHQAMDgQuu0SDpgSvMLA6KOk6QXcIBEsdtOGoTOEDSaoXGQFrgYu82Di7QAtEqagwFrsy7TQyoQRLOREkUA1E4G1GMRB2LM6Qkh1Is9Y97h7xcLck5uzPzfc45rxewIEET0geCl9y97/s8zw99//vfDwAAAAAAgDbuyR4AAAAAAAB0j8AAAAAAAAC0JjAAAAAAAACtCQwAAAAAAEBrAgMAAAAAANCawAAAAAAAALQmMAAAAAAAAK0JDAAAAAAAQGsCAwAAAAAA0JrAAAAAAAAAtCYwAAAAAAAArQkMAAAAAABAawIDAAAAAADQmsAAAAAAAAC0JjAAAAAAAACtCQwAAAAAAEBrAgMAAAAAANCawAAAAAAAALQmMAAAAAAAAK0JDAAAAAAAQGsCAwAAAAAA0JrAAAAAAAAAtCYwAAAAAAAArQkMAAAAAABAawIDAAAAAADQmsAAAAAAAAC0JjAAAAAAAACtCQwAAAAAAEBrAgMAAAAAANCawAAAAAAAALQmMAAAAAAAAK0JDAAAAAAAQGsCAwAAAAAA0JrAAAAAAAAAtCYwAAAAAAAArQkMAAAAAABAawIDAAAAAADQmsAAAAAAAAC0JjAAAAAAAACtCQwAAAAAAEBrAgMAAAAAANCawAAAAAAAALQmMAAAAAAAAK0JDAAAAAAAQGsCAwAAAAAA0JrAAAAAAAAAtCYwAAAAAAAArQkMAAAAAABAawIDAAAAAADQmsAAAAAAAAC0JjAAAAAAAACtCQwAAAAAAEBrAgMAAAAAANCawAAAAAAAALQmMAAAAAAAAK0JDAAAAAAAQGsCAwAAAAAA0JrAAAAAAAAAtCYwAAAAAAAArQkMAAAAAABAawIDAAAAAADQmsAAAAAAAAC0JjAAAAAAAACtCQwAAAAAAEBrAgMAAAAAANCawAAAAAAAALQmMAAAAAAAAK0JDAAAAAAAQGsCAwAAAAAA0JrAAAAAAAAAtCYwAAAAAAAArQkMAAAAAABAawIDAAAAAADQmsAAAAAAAAC0JjAAAAAAAACtCQwAAAAAAEBrAgMAAAAAANCawAAAAAAAALQmMAAAAAAAAK0JDAAAAAAAQGsCAwAAAAAA0JrAAAAAAAAAtCYwAAAAAAAArQkMAAAAAABAawIDAAAAAADQmsAAAAAAAAC0JjAAAAAAAACtCQwAAAAAAEBrAgMAAAAAANCawAAAAAAAALQmMAAAAAAAAK0JDAAAAAAAQGsCAwAAAAAA0JrAAAAAAAAAtCYwAAAAAAAArQkMAAAAAABAawIDAAAAAADQmsAAAAAAAAC0JjAAAAAAAACtCQwAAAAAAEBrAgMAAAAAANCawAAAAAAAALQmMAAAAAAAAK0JDAAAAAAAQGsCAwAAAAAA0JrAAAAAAAAAtCYwAAAAAAAArQkMAAAAAABAawIDAAAAAADQmsAAAAAAAAC0JjAAAAAAAACtCQwAAAAAAEBrAgMAAAAAANCawAAAAAAAALQmMAAAAAAAAK0JDAAAAAAAQGsCAwAAAAAA0JrAAAAAAAAAtCYwAAAAAAAArQkMAAAAAABAawIDAAAAAADQmsAAAAAAAAC0JjAAAAAAAACtCQwAAAAAAEBrAgMAAAAAANDavdkDAADol6pu1iJiLSJWI2Jj8ZeP/tqy82e1CYbqT/yhz8Z/9Yf+wbH//hde/shBRMS97/nd17/3vR86+PcHT3x19f2vfvW3X1v9Fw8/8K1/8wfO/dZn4/f/7YNTGwwAQKf80Pe///3sDQAAdFBVN5vxZjg4+vNzWXuAH9Q2MBzXVw8e/+br373vK4fffvhfv/Y7D/6TP/Jj/+xX4/f/7f0T/y8CAKBoAgMAAO+qqpuNmJ9G2Fz8cT11EHAspxUY3s6Xf/tDX3vlmx/4/Pe+d8+Njae+eNVpB7ItYvjt7E7HI///ySAsnS691cF0PNo92zVA3wgMAAD8gMVvRC/EPChsRsRK4hzgDp11YLjVy4ePHX791Uf23nffd//Oj37w5v8pOHDWqro57oceNxZ/PIiI3eU/+gCWrqvqZicinj3G33ozIvYXf/6WnwchygFvQ2AAACAiIqq6OQoKF8JVR9AL2YHhVi9944mvvPzqY/9gY+2L/5MrlTgLLQLDuzn64HW2+OOu8EBXtAgMx3Ej5j8H9mP+80F4gIETGAAABmwRFY5+OKUAPVNaYFjWvPrIN178xgeviw2cphMMDG/nRsy/4T2L+Qet+6f83wetnXBguJ2b8ebPg5n4BsMiMAAADMziPYXLISpA75UcGJY1rz7yja+/9uj0xz/8pf/eNUqcpDMIDLe6GYsPWSPium92U4IzCAy3cyMirofgAL0nMBSkqptZ9gYA+mE6Hm1mb6AsVd2sRsR2zMOC649gILoSGJbd/PqTv/Xd373vf/nRP/ZX/vfsLXRfQmC41V7MP2S97kNWsiQFhmWHsYgNIbxB79ybPYC3OJ89AADol6XTClvZWwCO49zjL300Iv631/7xz/3PL37jg9ecaqDj1hc/nq3q5uh0w/XpeHQ9dRWcrZWY/1p0KyKuVnXz6XgzvPnnO3ScwAAA0EOLtxUuhy8wAB318APfeujHP/ylP/Mfvvu+n/vab/yFz597/KX/xlsNdNy5WHzIWtXNYURMImLiZAMD9PTih9gAPXBP9gAAAE5OVTfbVd3sR8SnQlwAeuD++15/z7nHX/ojEfHCzd/4C/8ovvCxtexNcAJWIuJSRDxf1c1+VTeXq7pZS94EGZ6OiKsR8UpVN5OqbjaT9wAtCQwAAD2wFBauhjcWgJ4SGuipcxHxiYh4oaqb6z5gZcC2IuK5pei2mj0IeHcCAwBAh1V1c0FYAIZGaKDHno43P2Dd9gErA3UU3Y5ONWxkDwLensAAANBBVd1sVnUzi/lVSMICMEhHoeGFz/2lSXzhYz6IpU/OxfzLA/tV3ewIDQzYVsyvEps53QNlEhgAADqkqpu1qm4mEfFceGMBICIinnriy1uvf/e9X//aP3rmf8zeAidsJSKejXlomHingQE7H/PTPbOqbrazxwBvEhgAADqiqpudiNiN+Te5AFjyvvu+c+8PrzT/wyuf/7NffenGL/x09h44YSsx//f/C0IDA3c+Iq4urhG7kD0GEBgAAIq3uA5pN+bfYFzJ3gNQskcePPzhJx99+TMvfO4XP+PaJHpqKyJ2XZ3EwJ2LiE+5OgnyCQwAAIWq6ma1qpsrMb8OaT17D0CXPPXEiz/96rcf+krzm3/uZ7O3wClYvjppJ3kLZFq+OmktewwMkcAAAFCgxTexdiPiUvIUgM76wPu/+f7RB1751Zdu/MJvOM1AT61ExLOui4E4H/MrxK442QNnS2AAACjM0qmFc9lbAPrgyUdf/snXfufBL3ubgR5bvi5mLXsMJLoU85M9l7OHwFAIDGW5kT0AAMhT1c3G4q0FpxYATtjDD3zroScfffkzL934hb+VvQVO0dG3uHeyh0CilYj4RFU3u1XdbGSPgb4TGAAAClDVzXZEzMJbCwCn6slHX/7vDv+/n/+KK5PouaNrkzazh0Ci9Yh43oPocLoEBgCARIuHnCcRcTXm37YC4JStvP+1J1//j+992ZVJ9Ny5mD9+6056hu7ZiNgV3OB0CAwA0D972QM4nsUdybOI2MpdAjA877v3O/c9+ejLn3nhc7/417O3wCm7FD5chTeCW/YQ6BuBAQD65yB7AO9ucR/sbrgSCSDVU0+8+OdfuvELv+HKJHru6MPVnewhkOyStxngZAkMAABnbPHewvPhSiSAIjz56Ms/efjth/+lyMAAPLv4cHUtewgkWo+IWVU3l7OHQB8IDAAAZ2hxLPtq9g4A3mrl/a89+drvPPjl+MLHfKuVvluP+ZVJF7KHQKKViPhEVTfXvVECd0dgAAA4I4vHnC9l7wDg9h5+4FsPvf4f3/uPv/Trv/QT2VvglK1ExKfcRw/xdMxPM4jLcIcEBgCAU1bVzWpVN7PwmDNA8d5373fu+/BjX3uu+c0/97PZW+AMXKrqZuYb3Azc0ZVJ29lDoIsEBgCAU7T4DfssIs4nTwHgmO6/7/X3jD7wyq8efP7nfz57C5yB8zG/Msk3uBmylYi46lQPtCcwAACckqW4sJ48BYA7sPrga78iMjAQ52L+DW7vMjB0l7zLAO0IDAAAp0BcAOgHkYEBOXqXYTt7CCQ7epdBZIBjEBgAAE6YuADQLyIDA3O1qptJ9ghIth6uDoNjERgAAE6QuADQTyIDA7MlMsAbV4eJDPAOBAYAgBMiLgD02+qDr/3Kl379l34iewecka2qblwTw9CtxDwybGYPgVIJDADQP/vZAwZsFuICQK99+LGvPScyMCDnw130sBIRz3mfBG5PYCjLbvYAAHphP3vAEC2uERAXAHru/vtef89HRl/9XHzhY2vZW+CMrIfIABHz90m2s0dAaQSGshxkDwAA2qvq5kpEbGXvAOBsvO/e79zXvPrIP40vfMwHrgyFyABzIgPcQmAAALgLi99gXMreAcDZGn3glUe/8c3Vz2fvgDMkMsCcyABLBAYAgDu0eOztavYOAHI8+tDBR1/43C9+JnsHnCGRAeZEBlgQGAAA7kBVN2sRcT17BwC5nnrixZ/+15999i9n74AztB5+DQQREVequtnIHgHZBAYAgJYW39q7HhEr2VsAyLf2xFf+8pd+/Zd+InsHnKHzVd1MskdAspWYn+gRGRg0gQEA+mc/e8AAXIn5t/cAIO6/7/X3PLHy27/m0WcGZktkgDciw1r2EMgiMABA/+xnD+izxV2rW9k7ACjLww9866EXv/HBf5i9A87YlnvoIVYi4rq3SRgqgaEss+wBAMDbWxx/vpK9A4AyfeTRr/6+Fz73i389ewecsatV3VzIHgHJvE3CYAkMAADHsPhG0iS8uwDAO/jQI19/xnsMDNDEPfTgbRKGSWAAADienfDuAgDv4v77Xn/P6oOv/t3sHXDGXBEDc64NY3AEBgDon4PsAX1T1c1mRFzK3gFANzz28MHohc/9pUn2Djhj58IVMRAxvzZsM3sEnBWBAQB6Zjoe7WZv6JOlq5EA4NieeuLLW65KYoDOV3XjvSpwoocBERjKsp89AAD4ATsx/0YeALTiqiQG6pJHn2F+bVj2CDgLAkNBpuPRfvYGAOBNrkYC4G489vDB6Iuf3fmb2TsgwaSqm7XsEZDsfFU3O9kj4LQJDAAAb2+SPQCAbnvqiRd/Lr7wMddkMDS+vQ1zz3qPgb4TGACgX25kD+iLxbeNXI0EwF25/77X3/NbLz01y94BCdZ9exsiwnsM9JzAUJ7D7AEAMHSLI/3PZu8AoB8++uQL6//8//4r/3X2DkjwbFU3G9kjINlKOBlNjwkM5dnNHgAAxJXsAQD0y5OPvPwr2RsgiW9vQ8TTHj+nrwQGAOiX/ewBXbe4I/Xp7B0A9MvoA688+vzf++W/lr0DEpyLiJ3sEVAAj5/TSwIDAPTLfvaAHnB6AYBT8dQTX76UvQGSXPLQLcRK+L0GPSQwlMcVSQCQpKqb7YhYz94BQD+tPvja/V/87M7fzN4BSSbZA6AArkqidwSG8hxkDwCg0/x75O7sZA8AoN/WHn/xT8cXPuY+eoboXFU3O9kjoAAT75LQJwIDAPSLk3B3aHF64Vz2DgD67YH3vn7PP7/50Un2DkjyrDvoIVbCF5voEYGhPD4YAoAcO9kDABiG/+RD+/+lUwwM2CR7ABTgUlU3G9kj4CQIDOVxtQUAd2M/e0AXOb0AwFl64L2v3zP7l//538jeAUnOe/AZIsKDz/SEwAAAPTIdj/azN3TUTvYAAIZlY+1f/Wz2Bkg0yR4ABTi/+KITdJrAUJjpeDTL3gAAQ+L0AgAZVh987f7n/94v/7XsHZDkXFU3l7NHQAF2sgfA3RIYAKA/bmQP6Ci/uQUgxaMPHdTZGyDRTlU33iJh6M5VdbOTPQLuhsBQpr3sAQAwBIv7f9ezdwAwTOcef2n0m//XJ/549g5IshK+6AEREZfFNrpMYCiTh54BuBO72QM6aDt7AADD9shDr3rsmSHzwSqIbXScwFCm/ewBAHSSQN1CVTdrEbGVvQOAYfs9H/k3P/6p8f/hLSCGaiXcQQ8RYhsdJjCUaT97AACdtJ89oGO2swcAQETEhx99+ZezN0CiS4svfsCQOcVAZwkMZdrPHgBAJ+1nD+iY7ewBABAR8ZHH/v2F7A2QbDt7ABTAKQY6SWAo0372AAA6aT97QFdUdXMhIlxHAUARnnzk5Qc89szA+WAVnGKgowSGMnmkE4DWpuPRfvaGDvFNUQCKcv97v/NXszdAIh+swpzYRucIDAWajkcHEXGYvQOATtnLHtAVi1+wCwwAFOWpJ778+7I3QDKBAeaxze9V6BSBoVxOMQDQxkH2gA65EPNfuANAMR596PDev39t/Keyd0CilaputrNHQAF2sgdAGwJDuQQGANqYZQ/oEN8IAqBIH1xt/mL2Bki2kz0ACnBu8WYcdILAUK797AEAdIoTDMewuB7p6ewdAHA7rkmCOFfVzWb2CCiAK8PoDIGhXE4wANCGf28cz2b2AAB4O48+dHjvtf/17/7x7B2QbDt7ABTgfFU3a9kj4DgEhkJNx6NZ9gYAOkVgOB5HjQEo2o988Mv/bfYGSLa1OHUKQ+cUA50gMJRtL3sAAJ1wOB2PXJF0PAIDAEX70OrL/0X2BijAdvYAKIDfu9AJAkPZfBsVgOPw74tjqOpmIyJWsncAwDv5kQ/+u4d8exsEBgiPPdMRAkPZfGAEwHH498Xx+MU5AJ3wJ//wr/3Z7A2QbH3x5RAYOr+HoXgCQ9lm2QMA6IT97AEdsZk9AACO4/EPvPLT2RugANvZA6AA3iSheAJDwabj0W5EHGbvAKB4TjAcz/nsAQBwHB9affn3Zm+AAvjmNsz5uUDRBIbyzbIHAFC26Xg0y95QuqpuNrM3AMBxeYcBImJ+/7xrkkBgoHACQ/muZw8AoGh72QM6YjN7AAC08VPr//Bi9gYowHb2ACjA06IzJRMYyjfLHgBA0VyPdDy+/QZAp5x7/KWfyt4ABfDNbZjzc4FiCQyFm45H++HbqQC8vVn2gI4QGADolIcf+KZ/d4FrkuCIwECxBIZumGUPAKBYTjC8i8Vx4nPZOwCgjYcf+PZj2RugED5YBVe+UjCBoRsm2QMAKNLhdDwSGN6db70B0DkfffLf3uvObYgIgQEiIlaqutnMHgG3IzB0wOLDo5vZOwAozix7QEdsZg8AgDtx4T/7f/5E9gYowLrYBhEhtlEogaE7rmQPAKA4Ti8cz1r2AAC4E6/9zoN/NHsDFGIzewAUYDN7ANyOwNAd17MHAFAc/244nrXsAQBwJ37sw//2x7I3QCE2swdAAZzmoUgCQ0dMx6P9iPh09g4AiuH9heM7nz0AAO7E977/Qx/J3gCF2MweAIXYzB4AtxIYusU1SQAcmWUP6ALf8AGgyz60+vXHsjdAIXxzG+Y2swfArQSGDpmOR7OI2MveAUARZtkDOmIjewAA3Kn33vud+7M3QEE2swdAAfz+huIIDN3jFAMAEd5fAIDeO/f4S1HVzVr2DiiED1bB9a8USGDomOl4NImIm9k7AEh1c/E2D+9uM3sAANyltewBUIjN7AFQgqpuNrM3wDKBoZu2swcAkMrpBQAYiD/5h3/tj2ZvgEI4wQBzfi5QFIGhgxZvMdzI3gFAGoHh+NayBwDA3fjt1x750ewNUIgVV4ZBRAgMFEZg6K7t7AEApDhchGaOZy17AAAAJ8YHq+DnAYURGDpqcff2x7N3AHDmnF4AgAH5kR/+dx/M3gAF8cEqRKxnD4BlAkOHTcejnYjYy94BwJkSGABgQH73e/esZW+AgggMEBFV3fi5QDEEhu67EBGH2SMAOBOH0/FIYGjnfPYAALgbv/u999yfvQEKspY9AAqxmj0AjggMHbe4Kmk7eQYAZ0NcAABgyFwNA3Ob2QPgiMDQA4tvsz6TvQOAUzfJHgAAAJmqulnL3gAFWMseAEcEhp6YjkdXIuJa9g4ATs3N6Xg0yx4BAADJ1rIHQAHWsgfAEYGhR6bj0XaIDAB9NckeAAAABfC4LQgMFERg6BmRAaC3JtkDAACgAB63hYhz2QPgiMDQQ4vI4E0GgP749HQ82s8eAQAABVjLHgAlqOpGbKMIAkNPLd5k+JmIOMzeAsBdm2QPAACAQqxlD4BCuC6MIggMPTYdj67H/B82e9lbALhjNxf/PAcAAAAoisDQc9PxaH86Hm1ExMeztwBwR3ayBwAAQEF8axvmXJFEEQSGgZiORzsR8VRE3EieAsDxHUaE0wsAAPCmlewBUAixjSLcmz2As7N4IHSzqpvNmH8j9nzmHgDe1ZXpeHSQPQKS3YyI/ewR0FX/7xf/0z/4r1780Yezd3DnDr/98Fd/KnsEAMDbEBgGaDoezUJoACjdYURcyR4BBZgsTmICd6CqY/by4WN+vd9t/yF7AADA23FF0oBNx6PZdDzajIifjIhryXMAeKvrTi8AAMAPqurG1TAAhRAYOAoN2xHxSEQ8ExF7uYsACI87AwDA2/G4LURsZg+ACFcksWTxTdkrEXGlqpu1iLiw+OFINcDZ+uTi3RwAAACAYgkM3Nbig62j2LAa8yp69GM9axfAAByG0wsAAABABwgMvKvFyYbrix+xFBw2lv64kjQPoG+ueHsBAAAA6AKBgdZuDQ4Rb0SHo+Bw9OdrEXHu7BcCdNZhzE+PAQAAABRPYOBELKLDbPHjLaq62Yg3o8Pq0p9HOP0AsOyy0wsAAABAVwgMnLrpeLS7+NPZO/19i4el15b+0lGQWLb5Dv8Rq+F9CKC79qbj0SR7BAAAAMBxCQwUY/Gw9P7SX5qlDGHQqrrZjPn1X07WcNYuZw8AAAAAaOOe7AEApajqZjsingtxgbN3bToezbJHAAAAALQhMADEG3HhavYOBukwnF4AAAAAOsgVScDgVXUziYit7B0MloedAQAAgE5yggEYNHGBZDc87AwAAAB0lRMMwCBVdbMa88ecz2dvYbAOI2I7ewQAAADAnRIYgMFZxIVZRKwnT2HYdqbj0X72CAAAAIA75YokYFCqutkIcYF8n56OR1eyRwAAAADcDScYgMFYigsryVMYNlcjAQAAAL3gBAMwCOICBbkwHY8OskcAAAAA3C2BAei9qm62I+L5EBfI9/HpeDTLHgEAAABwEgQGoNcWceFq9g6IiBvT8WgnewQAAADASREYgN6q6uZKiAuU4WZEXMgeAQAAAHCSPPIM9FJVN5OI2MreATF/1Nm7CwAAAEDvCAxAr1R1sxoRk4h4OnkKHLk8HY92s0cAAAAAnDSBAeiNRVyYRcR68hQ48snpeDTJHgEAAABwGrzBAPSCuECBrk3Ho8vZIwAAAABOi8AAdF5VNxsRsR/iAuXYiwhxAQAAAOg1gQHotEVcmEXESvIUOLIXEZsedQYAAAD6TmAAOquqm+0QFyjLYURcEBcAAACAIfDIM9BJi7hwNXsHLDmM+cmF/ewhAAAAAGfBCQagc6q62QlxgbIcxYXd7CEAAAAAZ8UJBqBTqrqZRMRW9g5YIi4AAAAAgyQwAJ1Q1c1qRFwJcYGyiAsAAADAYAkMQPEWcWEWEevJU2CZuAAAAAAMmjcYgKKJCxRKXAAAAAAGT2AAilXVzUZE7Ia4QFnEBQAAAIBwRRJQqEVcmEXESvIUWCYuAAAAACw4wQAUp6qbCyEuUJ6bIS4AAAAAvMEJBqAoVd1sR8TV7B1wi72Yx4WD7CEAAAAApXCCAShGVTeXQ1ygPOICAAAAwG04wQAUoaqbSURsZe+AW1ybjkfb2SMAAAAASuQEA5BOXKBQ4gIAAADAO3CCAUhT1c1qRFyPiPPZW+AWF6fj0SR7BAAAAEDJBAYgxSIuzCJiPXkK3EpcAAAAADgGgQE4c1XdbETEJMQFynIY88ecd7OHAAAAAHSBwACcqUVcmEXESvIUWCYuAAAAALTkkWfgzFR1sxniAuXZi4gNcQEAAACgHYEBOBNV3WxHxHMhLlCWvZifXNjPHgIAAADQNQIDcOoWceFq9g64xbWYx4WD7CEAAAAAXeQNBuBUVXUziYit7B1wi2vT8Wg7ewQAAABAlznBAJwacYFCPSMuAAAAANw9JxiAE1fVzWpETCLi6eQpcKuL0/Fokj0CAAAAoA8EBuBELeLCLCLWk6fAssOIuDAdj2bZQwAAAAD6whVJwImp6mYtxAXKcxjzx5xn2UMAAAAA+kRgAE5EVTcbEbEb4gJl2Yt5XNjNHgIAAADQN65IAu7aIi7MImIleQosO4oLB9lDAAAAAPrICQbgrlR1sx0Rz4e4QFk+HeICAAAAwKlyggG4Y4u4cDV7B9zi2nQ82s4eAQAAANB3TjAAd6Sqm50QFyjPx8UFAAAAgLPhBAPQWlU3k4jYyt4Bt7g4HY8m2SMAAAAAhkJgAI6tqpvViLgS4gJlOYyI7el4dD17CAAAAMCQCAzAsSziwiwi1pOnwLLDmD/mvJs9BAAAAGBovMEAvCtxgULdDHEBAAAAII0TDMA7qupmI+ZxYSV5Cizbi3lcOMgeAgAAADBUTjAAb0tcoFA3QlwAAAAASOcEA3BbVd1sx/xBZ3GBklybjkfb2SMAAAAAcIIBuI1FXLga4gJl+aS4AAAAAFAOgQF4i6puLsc8LkBJLk7Ho8vZIwAAAAB4kyuSgDdUdTOJiK3sHXCLi9PxaJI9AgAAAIC3EhiAiBAXKNJhzB9z3s0eAgAAAMAPEhhg4Kq6WY2IWUSsJ0+BZeICAAAAQOG8wQADJi5QqL2IWBMXAAAAAMomMMBAVXWzERG7IS5Qlr2Yn1w4yB4CAAAAwDtzRRIM0CIuzCJiJXkKLLs2HRKs31AAACAASURBVI+2s0cAAAAAcDxOMMDAVHWzGeIC5REXAAAAADpGYIABqepmOyKeC3GBslwUFwAAAAC6R2CAgVjEhavZO+AWF6fj0SR7BAAAAADteYMBBqCqm0lEbGXvgCWHEXFhOh7NsocAAAAAcGcEBug5cYECHUbE5nQ82s0eAgAAAMCdExigp6q6WY2I6xFxPnsLLNmL+cmF/ewhAAAAANwdgQF6aBEXZhGxnjwFlu3F/OTCQfYQAAAAAO6eR56hZ6q62QhxgfJcC3EBAAAAoFecYIAeWYoLK8lTYNm16Xi0nT0CAAAAgJPlBAP0hLhAoZ4RFwAAAAD6SWCAHqjqZjsing9xgbJcnI5HV7JHAAAAAHA6XJEEHbeIC1ezd8CSw4jYno5H17OHAAAAAHB6BAbosKpurkTEpewdsOQw5o8572YPAQAAAOB0uSIJOqqqm0mIC5RlL8QFAAAAgMFwggE6pqqb1YiYRMTTyVNg2VFcOMgeAgAAAMDZcIIBOmQRF2YhLlCWT4e4AAAAADA4TjBARyzFhfXkKbDs2nQ82s4eAQAAAMDZc4IBOqCqm42I2A9xgbJ8XFwAAAAAGC4nGKBwi7gwi4iV5Cmw7OJ0PJpkjwAAAAAgjxMMULCqbrZDXKAshyEuAAAAABBOMECxFnHhavYOWHIY88ecd7OHAAAAAJDPCQYoUFU3OyEuUJabIS4AAAAAsMQJBihMVTeTiNjK3gFL9mIeFw6yhwAAAABQDoEBClHVzWpEXAlxgbLciIgL4gIAAAAAtxIYoACLuDCLiPXkKbDs2nQ82s4eAQAAAECZvMEAycQFCvVJcQEAAACAdyIwQKKqbjYiYjfEBcpycToeXc4eAQAAAEDZXJEESRZxYRYRK8lTYNnF6Xg0yR4BAAAAQPkEBkhQ1c2FiJiEuEA5DiNiczoe7WYPAQAAAKAbXJEEZ6yqm+2I+FSIC5RDXAAAAACgNYEBzlBVN5cj4mr2DliyFxFr4gIAAAAAbbkiCc5IVTeTiNjK3gFL9mJ+cuEgewgAAAAA3SMwwBkQFyjQtel4tJ09AgAAAIDuEhjgFFV1sxoR1yPifPYWWCIuAAAAAHDXvMEAp2QRF2YhLlCWZ8QFAAAAAE6CwACnoKqbjZjHhfXkKbDs4nQ8upI9AgAAAIB+cEUSnLCluLCSPAWOHEbEhel4NMseAgAAAEB/OMEAJ6iqm80QFyjLYURsigsAAAAAnDSBAU5IVTfbEfFciAuUYy8iNqbj0W72EAAAAAD6xxVJcAIWceFq9g5YshfzkwsH2UMAAAAA6CcnGOAuVXUzCXGBslwLcQEAAACAU+YEA9yFRVzYyt4BS65Nx6Pt7BEAAAAA9J/AAHegqpvViJhExNPJU2DZx6fj0U72CAAAAACGQWCAlhZxYRYR68lTYNnF6Xg0yR4BAAAAwHB4gwFaqOpmLcQFynIYET8jLgAAAABw1pxggGOq6mYj5nFhJXkKHDmM+WPOu9lDAAAAABgeJxjgGMQFCrQX4gIAAAAAiQQGeBdV3WxHxPMhLlAOcQEAAACAdAIDvINFXLiavQOWfDrmceEgewgAAAAAw+YNBngbVd3sRMSz2TtgybXpeLSdPQIAAAAAIgQGuK2qbiYRsZW9A5Z8cjoeXc4eAQAAAABHBAZYUtXNakRcCXGBslycjkeT7BEAAAAAsExggIVFXJhFxHryFDhyGBGXxQUAAAAASiQwQIgLFOkw5o8572YPAQAAAIDbuSd7AGSr6mYjIvZDXKAcN0NcAAAAAKBwTjAwaIu4MIuIleQpcGQv5nHhIHsIAAAAALwTJxgYrKputkNcoCw3QlwAAAAAoCOcYGCQFnHhavYOWHJtOh5tZ48AAAAAgONygoHBqermcogLlEVcAAAAAKBznGBgUKq6mUTEVvYOWHJxOh5NskcAAAAAQFtOMDAY4gIFEhcAAAAA6CwnGOi9qm5WY/6Y83ryFDhyGPPHnHezhwAAAADAnXKCgV4TFyiQuAAAAABALwgM9FZVNxsRsRviAuXYi4g1cQEAAACAPnBFEr20iAuziFhJngJH9mJ+cuEgewgAAAAAnASBgd6p6mYzIq6HuEA5rk3Ho+3sEQAAAABwklyRRK9UdbMdEc+FuEA5xAUAAAAAeklgoDcWceFq9g5Y8oy4AAAAAEBfuSKJXqjqZhIRW9k7YMnF6Xg0yR4BAAAAAKdFYKDzxAUKcxgRF6bj0Sx7CAAAAACcJoGBzqrqZjXmjzmfz94CC4cRsTkdj3azhwAAAADAafMGA520iAuzEBcox15EbIgLAAAAAAyFwEDnVHWzEfO4sJ48BY7sxfzkwn72EAAAAAA4KwIDnSIuUKBrMY8LB9lDAAAAAOAseYOBzliKCyvJU+DItel4tJ09AgAAAAAyOMFAJ1R1sx0Rz4e4QDk+Li4AAAAAMGROMFC8RVy4mr0DllycjkeT7BEAAAAAkMkJBopW1c2VEBcox2FE/Iy4AAAAAABOMFCwqm4mEbGVvQMWDmP+mPNu9hAAAAAAKIHAQHGqulmNiElEPJ08BY7sRcS2uAAAAAAAbxIYKMoiLswiYj15ChzZi/nJhYPsIQAAAABQEm8wUAxxgQLdCHEBAAAAAG7LCQaKUNXNRszjwkryFDhybToebWePAAAAAIBSOcFAOnGBAn1SXAAAAACAdyYwkKqqm+0QFyjLxel4dDl7BAAAAACUTmAgzSIuXA1xgTIcxjwuTLKHAAAAAEAXeIOBFFXd7ETEs9k7YOEw5o8572YPAQAAAICuEBg4c1XdTCJiK3sHLNyMiAviAgAAAAC0IzBwZqq6WY2IKyEuUI69mJ9cOMgeAgAAAABdIzBwJhZxYRYR68lT4Ii4AAAAAAB3QWDg1IkLFOjadDzazh4BAAAAAF12T/YA+q2qm42I2A1xgXKICwAAAABwApxg4NQs4sIsIlaSp8CRi9PxaJI9AgAAAAD6wAkGTkVVNxdCXKAs4gIAAAAAnCAnGDhxVd1sR8TV7B2wcBjzx5x3s4cAAAAAQJ84wcCJqurmcogLlENcAAAAAIBT4gQDJ6aqm0lEbGXvgIW9mMeFg+whAAAAANBHTjBwIsQFCiMuAAAAAMApc4KBu1LVzWpEXI+I89lbYOFaRFwWFwAAAADgdAkM3LFFXJhFxHryFDhybToebWePAAAAAIAhcEUSd6Sqm40QFyjLM+ICAAAAAJwdJxhobSkurCRPgSMXp+PRJHsEAAAAAAyJwEArVd1sxvzNBXGBEhxGxIXpeDTLHgIAAAAAQ+OKJI6tqpvtiHguxAXKcBgRm+ICAAAAAOQQGDiWRVy4mr0DFvYiYmM6Hu1mDwEAAACAoXJFEu+qqpsrEXEpewcs7MX85MJB9hAAAAAAGDInGHhHVd1MQlygHJ8OcQEAAAAAiuAEA29rERe2snfAwrXpeLSdPQIAAAAAmHOCgdsSFyjMx8UFAAAAACiLEwz8AHGBwlycjkeT7BEAAAAAwFsJDLyFuEBBDiNiezoeXc8eAgAAAAD8IIGBN4gLFOQw5o8572YPAQAAAABuzxsMRIS4QFH2QlwAAAAAgOI5wYC4QEmO4sJB9hAAAAAA4J05wTBw4gIFuRHiAgAAAAB0hhMMAyYuUJBr0/FoO3sEAAAAAHB8TjAMVFU32yEuUIZPigsAAAAA0D1OMAzQIi5czd4BEXFxOh5NskcAAAAAAO05wTAwVd1shLhAvsMQFwAAAACg05xgGJCqbtYiYpY8Aw5j/pjzbvYQAAAAAODOOcEwEFXdrEbE9YhYyd7CoIkLAAAAANATAsNwTCJiPXsEg7YXEWviAgAAAAD0g8AwAFXdXI6Ip7N3MGh7MT+5cJA9BAAAAAA4Gd5g6LmqbjYj4hPZOxi0a9PxaDt7BAAAAABwspxg6LGldxcgi7gAAAAAAD0lMPSbR53JdFFcAAAAAID+Ehh6avHuwvnsHQzWxel4NMkeAQAAAACcHm8w9FBVNxsRsZO9g0E6jPljzrvZQwAAAACA0yUw9NMkXI3E2RMXADgNm1Xd7GSPgA5byx4AAEB/CQw9s7gaaT17B4OzFxEXpuPRfvYQAHrnfLj2EQAAoEgCQ49UdbMWrkbi7O3F/OTCQfYQAAAAAODsCAz9MglXI3H21iPilapusnfQb4cR8W7Xbx28zd+zu/i/Hdl32gYAAADg7gkMPVHVzYVwfQDQXytxvH/GPX2c/7BbgtiNxR+XA8VRlBAjAAC6bS9cIwz72QOA/hIY+uNK9gCAjloOFz8QKBYxYi/eDBD7iz/uuhoMAKB4fr0GAgNwigSGHqjqZicizmXvAOixo2+9veUURVU3R1c3zeLN6LB/pssAAAAAkggMHVfVzWpEXM7eATBQR1c3vREeqrq5GfPgMIuImeAAAJBqP1wnDE7yAKfmnuwB3LXL4WFngJKci4itiLgaES9UdbNb1c2Vqm42kncBAAzRfvYAyDYdj3bf/e8CuDNOMHSY0wsAnbC++HFpcbrhekRccbIBAAAA6DonGLrN6QWAbjkXEZdifrJhVtXNdvIeAIC+881tmLuZPQDoJycYOsrpBYDOOx8R56u62YmIScxPNbgbFQDgZPn1Fcztx/wLTwAnygmG7nJ6AaAfzkXEsxGxv4gNnKwb2QMAgFROMMDcfvYAoJ8Ehu5yegGgX1Yi4tmqbvarutnMHgMAFGOWPaDLnBCFN+xnDwD6SWDooMWd3U4vAPTTuYh4rqqb64vr8AAAuDtONILTPMApERi6yekFgP57OubXJm1mD+k431oEAPx6APw8AE6JwNAxVd1sRMR69g4AzsRKzE8z7GQP6TDf1AKg6/y77O7535DBm45Hs+wNQD8JDN3j9ALA8Dxb1c3ElUkAMEi+dXz3BAaYu5k9AOgfgaFDFh8sXcjeAUCKrYiYiQyt+UABgK4TGO7efvYAKIRfGwMnTmDolgvhcWeAIVsPkaEtH8oA0GnT8cgHgnfJ/4bwBj8XgBMnMHSL0wsArMf/397dI7dxrGsA/u6tk1vB5MJZgXhWYHgFRw4RGSpugF7BhXYgLWCqqGhScgfgDsQdkDkCcwW+AVoSTP02BfLrmXmeKpYkW8FbVBEY9Nv9dcQ2O8SI+BAFwJjdZQeYkKvsANAAz8bA0SkYRqLsVv1vdg4AmvBidbo7zw4xBkPfOcEAwJhZDDwe30vwcwA8AgXDeDi9AMChP1anu012iJGwYxGAsbrJDjAhFlaZvaHvbsJFz8CRKRjGQ8EAwH3/tzrdLbNDjMBNdgAAeKCb7AATss0OAI1QtgFHpWAYAeORAPiGc5c+f9dNdgAAeKBtdoCpKDu33WkBXleAI1MwjMMyOwAAzXoeEW+yQzRumx0AAB7oJjvAxGyzA0ADttkBgGlRMIyD8UgAfMsfRiV90012AAB4gLuy657j2WYHgGxD370Pp3mAI1IwjMMyOwAAzXOK4SuMRABgpMxJP76L7ADQiG12AGA6FAyNW53uTmI//gIAvuXF6nS3zg7RsG12AACotM0OMDVl08Ftdg5owDY7ADAdCob2LbMDADAam+wADbMLFICx8d71OLbZAaABTvMAR6NgaN8yOwAAo/HcKYav2mYHAIBK2+wAE2Vhldlzmgc4JgVD+5bZAQAYlU12gBYNfbfNzgAAFa6HvvsrO8REbbMDQCOUbcBRKBgaVu5f+CU7BwCj8nx1unuZHaJRV9kBAOAHbbMDTFUpbi6zc0ADzrMDANOgYGjbSXYAAEbpLDtAo7bZAQDgB22zA0ycndvM3tB37yPiLjsHMH4KhrYtswMAMEq/rk53i+wQDbKYAMBYbLMDTJxnAtjzswD8NAVD25xgAOCh1tkBWmOXFgAj4f6FR2ZMEnx0nh0AGD8FQ9teZAcAYLTW2QEaZZcWAK3zXvU0fJ+ZvaHvthFxm50DGDcFQ6NWp7tldgYARu356nTnJNznttkBAOA7LHw/Dd9n2POzAPwUBUO7LAoB8LPW2QEa5AMUAC27LSP9eGRlTNK77BzQgPPsAMC4KRjatcgOAMDoLbMDtMbMZQAapwh/Wr7fzF4pNa+zcwDjpWBolxMMAPysF6vT3SI7RIMsJgDQqvPsAHMy9N1FmD8PERFvsgMA46VgaJeCAYBjWGYHaJCCAYAWGY+U4zw7ADTgIiLuskMA46RgaNDqdPcsIn7JzgHAJCyzA7TGzGUAGqUAz3GeHQCyledjr0HAgygY2uT0AgDHsswO0CgfoABojRElCYa+uwkbDyDCaxDwQAqGNikYADiW5+5h+JyZywA05rosdJPjPDsAZCsj2q6ycwDjo2Bo07PsAABMyjI7QKPOswMAQGHncKKh77ZhYRUivBYBD6BgaNMyOwAAk+Jk3JedZwcAgNhfrGp0X77z7ACQzSlf4CEUDAAwfQqGLyijKC6zcwAwexflglUSDX13HhZWISJikx0AGBcFQ5t+zQ4AwKR4X/k6x8AByLbJDsBHm+wAkE3ZBtRSMADADKxOd04xfEGZuewDFABZrlzu3A4Lq/DRJjsAMB4KhsasTnfL7AwATNIiO0DDNtkBAJitTXYAPrPJDgDZlG1ADQUDAMyDEwxf4QMUAEluy0k6GuK5AD7aZAcAxkHB0J5ldgAAJknB8G2b7AAAzM4mOwBftckOANmUbcCPUjAAwDwssgO0rHyAusvOAcBs3Jb3HhpU/m2us3NAAzbZAYD2KRjas8gOAMAkvcgOMAJn2QEAmI1NdgC+y3MBs1fKtqvsHEDbFAztWWQHAGCaVqe7RXaGljkGDsATcXphBMr9GBZWQSEKfIeCAQDmY5EdYAQ22QEAmDw748djnR0AspWy7V12DqBdCob2/JodAIDJctHzdzjFAMAjuxr67iI7BD9m6LubiHidnQMasAn3lQFfoWAAgPl4lh1gJNbZAQCYrE12AKq9CZsPmLlStr3JzgG0ScHQkNXpzsIPAI9pkR1gDMxcBuCRXJb3GEZk6Lu/wlgriKHvNhFxnZ0DaI+CoS1GVwDwmBbZAUZknR0AgEm5C4vUo1XGWl1m54AGeB0DPqNgAID5cFLuB5m5DMCRvSnvLYzXWZhBz8yVU1hvs3MAbVEwAMB8vMgOMDJmLgNwDLdltAgjVgqiTXIMaMEmPCMDBxQMbVlmBwAA9srM5XV2DgBGb50dgOMY+u5NuKeJmfOMDNynYACAGVmd7tz3U6EcAzdzGYCHeudi58lZh1FJzJxRScAhBQMAzIt7GOqtw0ICAPVc7DxBZVTSOjkGpBv67iwirrNzAPkUDG2x6AMAjXEMHIAHWpf3ECZm6LuLiHiXnQMasA4bcWD2FAxtMbYCgMe2zA4wRmUhwTFwAH7U2/LewXTZvc3sDX33Plx+DrOnYAAA+DGbiLjNDgFA827DgtvkHZxwtHubWSuXnzvRAzOmYAAA+AFlIeFldg4AmvfSaKR5KLu33bMBTvTArCkYAGBeFtkBxqwsJPyZnQOAZv1Z3iuYiaHvzsPubWbOiR6YNwVDW37NDgDA5C2yA4xdOQZ+mZ0DgOZclvcIZmbou3XYvc3MlXJ1nZ0DeHoKBgCAeuuwkADAJ9dhYW3uluGuJmauXG7/OjsH8LQUDAAAlRwDB+DAXUSs3bswbwd3NXk2YNaGvtuEsWEwKwoGAJiXk+wAU+EYOADF2r0LRHx8NniZnQOyGRsG86JgAIB5+SU7wJSUY+CvsnMAkObP8l4AEREx9N02PBtAxH5smJIBZkDB0IjV6W6RnQEAqDf03Xk4Bg4wR+9c6syXlGcDc+iZNWPDYD4UDO1YZAcAAB6mHANXMgDMx1V57YcvMoceIoa+u4n9SQYlA0yYggEA4DjOwjFwgDm4DnP2+QE2IMDHu0mWoWSAyVIwAMDMrE53Lnp+BOUY+DKUDABTdh0Ry/KaD9+lZAAlA0ydggEA5udZdoCpUjIATNpdKBd4ACUDKBlgyhQMAABHpGQAmCTlAj9FyQBKBpgqBQMAwJEpGQAm5UO58D47COOmZAAlA0yRgqEdi+wAAMDxKBkAJkG5wFEpGUDJAFOjYGjHIjsAAHBcSgaAUbuOiBPlAsdWSoa32Tkg00HJcJscBfhJCgYAmB+XPD8hJQPAKF3H/uTCTXYQpmnou7OIeJWdAzKVkuEkPCfDqCkYAGB+TrIDzM1ByWAkAkD7PpQLLnTmUQ19dx4Rv4cxMczYwXPyVXIU4IEUDAAAT2Dou7/MXQZo3ruh706UCzyVoe8uwix6Zq48Jy/DczKMkoIBAOAJlZLBSASA9rwur9HwpMqYmEUYE8PMeU6GcVIwAAA8sTIS4bewWxGgBXcR8Wrou012EOar7OA+CTu4mTnPyTA+CgYAgARD323D5c8A2W5jf9/CeXYQiLCDGyI+Pie7/BlGQsEAAJCkjERYht2KABmuIuKkvBZDM0rh9Z/YF2AwS0Pf3ZRTPW+zswDfpmAAAEh0cPnzn9lZAGbk9dB3S5c506pSfJ1ExGV2Fsg09N1ZRPweRiZBsxQMAAANGPruTex3KzoKDvB47iLiN/ctMAZlE8LL2G9CsLjKbA19dxH7wu0qOwvwOQVDO55lBwAAch2MTHIUHOD4LiNiUWZ7w2iUTQjm0TNrZWTSMiJeZ2cB/knB0I6T7AAAQL6yW9FRcIDjuYuIV0PfvTQSibE6mEdvcZVZKyfQnPqFhigYAGB+lNojUI6CL8IF0AA/4zL2FzmfZweBYyiLq/8Oo2KYsaHv3h8UbjbkQDIFAwDMj7F8I3FwAfRvEXGbHAdgTO4i4vdyauEmOwwc08GoGHczMGulcHM3AyRTMAAANK7MCzcWAeDHvI39XQsX2UHgMZW7GRbhtCMzdlC4/R425EAKBQMAwAiU0wyb2I9FuEyOA9Ciq4j4z9B3Z+5aYC7unXa0i5vZKqWyDTmQQMEAADAiZZfWy9gvJLjcDmC/Y/X3oe+WQ9+9zw4DGYa+25Zd3K/CLm5m6t6GHCd74IkoGAAARqgsJJyEhQRgvu4i4s+h74xDgmLou/Oh7xbh8ltmrGzIWYeTPfAkFAwAACN2sJCgaADm4i72i6eLMoMeuKfs4l6EooEZOzjZo2iAR6RgAACYAEUDMAOHxcLGPQvwbQfjYhahaGDGFA3wuP6VHQAAgOMZ+u48Is5Xp7t1RJxFxIvUQAA/7zYiNuX1DahUyrjN6nT3JiLWsX8+eJ4aChIMfbeNiOXqdLeM/c/CH5l5YCqcYAAAmKByouEk9ju1XHIHjNFlRPxW7lg4zw4DY1dONLw5OPFoJzezVE40rGN/GfTbcLoHfoqCAQBgwu59gHodxicBbbuN/WLPv4e+e1l2mwJHVjYiLCPiP7HfiGCBldkpl0GfxX6M2KuIuM5NBONkRBIAwAwMfXcTEZvYj0hYxv5Y+MuI+CUtFMAn7yLiYui7i+wgMCdD372PiPXqdPcs9s8FxisyO2WM2Hnsx4yexP7nwHMy/CAFAwDAzJQdwduIiHJXw8uI+G9eImCmLiPiIvbFggubIdG9BdZFfFpgdVcDs/KhdIvwnAw/SsEAADBjHy6FjohYne5exv5D1DIsKADHdxelUIiIrVIB2lROPZ5FxFnZzb0OZQMz9OE5+eCEj7IBvkDBAABARESU0SQXERFlQWFZvnyQAh7qKj4VCu+zwwB1ys/tYdmwjP0i66+ZueAp3Tvh8yw+/RwsQ/EGCgYAAD5XFhTeR8SbiM8Kh5PwYQr43G3sXze2EfHeBc0wLYfPBgeLrB++3NvALJSy4Wubcpbh3gZmSMEAAMB3faFweBb7ouEkIhYHv/ehCqbvLvavB+8j4ubD7408gvn4wiLrh8Lh5OBXzwRM3jc25Xx4Nla+MXkKBgAAqpWFhW35+ofV6W5ZfnsSEc/K18nBX3kWPmxBi67u/Xlbfv0r9osnfxlzBHzJ/cIhIqJcFn0S/9yQ4P2fSTsoHD4qz8Y25TBZCgYAAI7qYCzK9ht/DQCYsHJZ9E0clA4RH4uHRXzaiPDhzxHudmCCyrPx9vC/HZwGPtyIsyy/LsI4UkZEwQAAAADAkzgoHrbf+nsHC7Bf4jQVo3ZwGjjiXgl3Xxm79OwL/8toQpqgYAAAAACgKfcWYGG2jCekdf+bHQAAAAAAABgfJxjaoY0E4Kl4zwEAAAB+2v/8/fff2RkAAAAAAICRMSIJAAAAAACopmAAAAAAAACqKRgAAAAAAIBqCgYAAAAAAKCaggEAAAAAAKimYAAAAAAAAKopGAAAAAAAgGoKBgAAAAAAoJqCAQAAAAAAqKZgAAAAAAAAqikYAAAAAACAagoGAAAAAACgmoIBAAAAAACopmAAAAAAAACqKRgAAAAAAIBqCgYAAAAAAKCaggEAAAAAAKimYAAAAAAAAKopGAAAAAAAgGoKBgAAAAAAoJqCAQAAAAAAqKZgAAAAAAAAqikYAAAAAACAagoGAAAAAACgmoIBAAAAAACopmAAAAAAAACqKRgAAAAAAIBqCgYAAAAAAKCaggEAAAAAAKimYAAAAAAAAKopGAAAAAAAgGoKBgAAAAAAoJqCAQAAAAAAqKZgAAAAAAAAqikYAAAAAACAagoGAAAAAACgmoIBAAAAAACopmAAAAAAAACqKRgAAAAAAIBqCgYAAAAAAKCaggEAAAAAAKimYAAAAAAAAKopGAAAAAAAgGoKBgAAAAAAoJqCAQAAAAAAqKZgAAAAAAAAqikYAAAAAACAagoGAAAAAACgmoIBAAAAAACopmAAAAAAAACqKRgAAAAAAIBqCgYAAAAAAKCaggEAAAAAAKimYAAAAAAAAKopGAAAAAAAgGoKBgAAAAAAoJqCAQAAAAAAqKZgAAAAAAAAqikYAAAAAACAagoGAAAAAACgmoIBAAAAAACopmAAAAAAAACqKRgAAAAAAIBqCgYAAAAAAKCaggEAAAAAAKimYAAAAAAAAKopGAAAAAAAgGoKBgAAAAAA78b5EwAAAmNJREFUoJqCAQAAAAAAqKZgAAAAAAAAqikYAAAAAACAagoGAAAAAACgmoIBAAAAAACopmAAAAAAAACqKRgAAAAAAIBqCgYAAAAAAKCaggEAAAAAAKimYAAAAAAAAKopGAAAAAAAgGoKBgAAAAAAoJqCAQAAAAAAqKZgAAAAAAAAqikYAAAAAACAagoGAAAAAACgmoIBAAAAAACopmAAAAAAAACqKRgAAAAAAIBqCgYAAAAAAKCaggEAAAAAAKimYAAAAAAAAKopGAAAAAAAgGoKBgAAAAAAoJqCAQAAAAAAqKZgAAAAAAAAqikYAAAAAACAagoGAAAAAACgmoIBAAAAAACopmAAAAAAAACqKRgAAAAAAIBqCgYAAAAAAKCaggEAAAAAAKimYAAAAAAAAKopGAAAAAAAgGoKBgAAAAAAoJqCAQAAAAAAqKZgAAAAAAAAqikYAAAAAACAagoGAAAAAACgmoIBAAAAAACopmAAAAAAAACqKRgAAAAAAIBqCgYAAAAAAKCaggEAAAAAAKimYAAAAAAAAKopGAAAAAAAgGoKBgAAAAAAoJqCAQAAAAAAqKZgAAAAAAAAqikYAAAAAACAagoGAAAAAACgmoIBAAAAAACopmAAAAAAAACqKRgAAAAAAIBqCgYAAAAAAKCaggEAAAAAAKimYAAAAAAAAKopGAAAAAAAgGoKBgAAAAAAoJqCAQAAAAAAqKZgAAAAAAAAqikYAAAAAACAagoGAAAAAACgmoIBAAAAAACopmAAAAAAAACqKRgAAAAAAIBqCgYAAAAAAKCaggEAAAAAAKj2/ylv+RGwLWe+AAAAAElFTkSuQmCC" alt="ZOII">
+      <div class="brand-divider"></div>
+      <div class="brand-text">
+        <h1>Panel de servicio</h1>
+        <p>Campaña Chedraui · asistencia domiciliaria</p>
+      </div>
+    </div>
+    <div class="period-chip"><span class="dot"></span> <span id="periodoTxt">1 – 31 de julio, 2026</span></div>
+  </div>
+
+  <div class="funnel">
+    <div class="funnel-label">Distribución del estatus — <span id="funnelTotal">0</span> servicios generados en el periodo</div>
+    <div class="funnel-track" id="funnelTrack"></div>
+  </div>
+</header>
+
+<div class="filterbar">
+  <span class="fb-label">Filtrar</span>
+  <select id="fServicio" class="fbtn"><option value="">Tipo de servicio: todos</option></select>
+  <select id="fEntidad" class="fbtn"><option value="">Entidad: todas</option></select>
+  <select id="fEstatus" class="fbtn"><option value="">Estatus: todos</option></select>
+  <button class="reset-btn" id="resetBtn">Limpiar filtros</button>
+  <span class="count-pill" id="countPill"></span>
+</div>
+
+<main>
+
+  <section id="kpis">
+    <div class="section-head">
+      <div><span class="eyebrow">Resumen</span><h2>Indicadores del periodo</h2></div>
+    </div>
+    <div class="kpi-grid" id="kpiGrid"></div>
+  </section>
+
+  <section id="fechas">
+    <div class="section-head">
+      <div><span class="eyebrow">Fechas</span><h2>Servicios generados por día</h2></div>
+      <span class="note">Julio 2026 · agrupado por fecha de generación del servicio</span>
+    </div>
+    <div class="card">
+      <div class="chart-wrap" style="height:260px;">
+        <canvas id="chartFechas"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <section id="tipo-entidad">
+    <div class="grid-2">
+      <div class="card">
+        <div class="section-head" style="margin-bottom:2px;">
+          <div><span class="eyebrow">Tipo de servicio</span><h3>Servicio y subservicio</h3></div>
+        </div>
+        <p class="sub">Distribución por línea de servicio (Hogar / Instalación) y su detalle</p>
+        <div class="chart-wrap" style="height:280px;">
+          <canvas id="chartServicio"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="section-head" style="margin-bottom:2px;">
+          <div><span class="eyebrow">Estatus</span><h3>Estado de los servicios</h3></div>
+        </div>
+        <p class="sub">Concluidos, programados y cancelados</p>
+        <div class="chart-wrap" style="height:230px;">
+          <canvas id="chartEstatus"></canvas>
+        </div>
+        <div class="legend-row" id="estatusLegend"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="entidades">
+    <div class="section-head">
+      <div><span class="eyebrow">Entidades</span><h2>Servicios por entidad federativa</h2></div>
+      <span class="note">Ordenado de mayor a menor volumen</span>
+    </div>
+    <div class="card">
+      <div class="chart-wrap" style="height:320px;">
+        <canvas id="chartEntidad"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <section id="satisfaccion">
+    <div class="section-head">
+      <div><span class="eyebrow">Encuestas de satisfacción</span><h2>Resultados de la evaluación del servicio</h2></div>
+      <span class="note">Sobre servicios con encuesta contestada</span>
+    </div>
+    <div class="grid-3">
+      <div class="card">
+        <h3>Calificación del servicio</h3>
+        <p class="sub">Escala de 1 a 5 estrellas</p>
+        <div class="chart-wrap" style="height:200px;">
+          <canvas id="chartCalificacion"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Net Promoter Score</h3>
+        <p class="sub">Promotores (9–10) · Pasivos (7–8) · Detractores (0–6)</p>
+        <div class="chart-wrap" style="height:200px;">
+          <canvas id="chartNPS"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Estatus de la encuesta</h3>
+        <p class="sub">Avance del levantamiento</p>
+        <div class="chart-wrap" style="height:200px;">
+          <canvas id="chartEval"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="detalle">
+    <div class="section-head">
+      <div><span class="eyebrow">Detalle</span><h2>Servicios registrados</h2></div>
+    </div>
+    <div class="card table-card">
+      <div class="table-toolbar">
+        <span class="sub" style="margin:0;" id="tableCount"></span>
+        <input id="tableSearch" type="search" placeholder="Buscar por folio, municipio…" style="border:1px solid var(--line);border-radius:9px;padding:8px 12px;font-size:13px;font-family:Inter,sans-serif;min-width:220px;">
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Folio</th><th>Fecha</th><th>Servicio</th><th>Subservicio</th>
+              <th>Entidad</th><th>Municipio</th><th>Zona</th><th>Estatus</th>
+              <th>Calificación</th><th>NPS</th><th>Encuesta</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div><span class="zoii">ZOII</span> · Panel de servicio generado a partir de la base de campaña Chedraui.</div>
+  <div>Datos de prueba · julio 2026</div>
+</footer>
+
+<script id="service-data" type="application/json">[{"id":83953,"fecha":"2026-07-01","servicio":"HOGAR","subservicio":"Examenes de Laboratorio Perfil 1","categoria":"Emergencia","estatus":"Concluido","entidad":"México","municipio":"Atizapán","zona":"Local","calificacion":5.0,"estatusEval":"Concluida","nps":10.0},{"id":83957,"fecha":"2026-07-01","servicio":"HOGAR","subservicio":"Checkup","categoria":"Emergencia","estatus":"Programado","entidad":"Ciudad de México","municipio":"Xochimilco","zona":"Local","calificacion":null,"estatusEval":"Pendiente","nps":null},{"id":83964,"fecha":"2026-07-01","servicio":"HOGAR","subservicio":"Examenes de Laboratorio Perfil 1","categoria":"Emergencia","estatus":"Concluido","entidad":"Ciudad de México","municipio":"Iztapalapa","zona":"Local","calificacion":5.0,"estatusEval":"Concluida","nps":10.0},{"id":84002,"fecha":"2026-07-01","servicio":"HOGAR","subservicio":"Checkup","categoria":"Emergencia","estatus":"Concluido","entidad":"México","municipio":"Atizapán de Zaragoza","zona":"Local","calificacion":5.0,"estatusEval":"Concluida","nps":10.0},{"id":84007,"fecha":"2026-07-01","servicio":"HOGAR","subservicio":"Checkup","categoria":"Emergencia","estatus":"Programado","entidad":"Chihuahua","municipio":"Juárez","zona":"Local","calificacion":5.0,"estatusEval":"Concluida","nps":10.0},{"id":84012,"fecha":"2026-07-01","servicio":"HOGAR","subservicio":"Checkup","categoria":"Emergencia","estatus":"Programado","entidad":"Sinaloa","municipio":"Culiacán","zona":"Local","calificacion":null,"estatusEval":"Pendiente","nps":null},{"id":84013,"fecha":"2026-07-01","servicio":"HOGAR","subservicio":"Checkup","categoria":"Emergencia","estatus":"Programado","entidad":"México","municipio":"Huixquilucan","zona":"Local","calificacion":null,"estatusEval":"Pendiente","nps":null},{"id":84016,"fecha":"2026-07-01","servicio":"HOGAR","subservicio":"Sin subservicio","categoria":"Emergencia","estatus":"Programado","entidad":"Chihuahua","municipio":"Juárez","zona":"Local","calificacion":null,"estatusEval":"Pendiente","nps":null},{"id":84027,"fecha":"2026-07-01","servicio":"HOGAR","subservicio":"Checkup","categoria":"Emergencia","estatus":"Concluido","entidad":"Nuevo León","municipio":"García","zona":"Foraneo","calificacion":5.0,"estatusEval":"Concluida","nps":null},{"id":84069,"fecha":"2026-07-02","servicio":"HOGAR","subservicio":"Examenes de Laboratorio Perfil 1","categoria":"Emergencia","estatus":"Concluido","entidad":"Veracruz","municipio":"Boca del Río","zona":"Foraneo","calificacion":5.0,"estatusEval":"Concluida","nps":10.0},{"id":84071,"fecha":"2026-07-02","servicio":"HOGAR","subservicio":"Checkup","categoria":"Emergencia","estatus":"Programado","entidad":"Veracruz","municipio":"Boca del Río","zona":"Foraneo","calificacion":null,"estatusEval":"Pendiente","nps":null},{"id":84144,"fecha":"2026-07-03","servicio":"HOGAR","subservicio":"Sin subservicio","categoria":"Emergencia","estatus":"Cancelado al momento","entidad":"Jalisco","municipio":"Zapopan","zona":"Local","calificacion":null,"estatusEval":"Inconclusa","nps":null},{"id":84150,"fecha":"2026-07-03","servicio":"HOGAR","subservicio":"Mastografia","categoria":"Emergencia","estatus":"Concluido","entidad":"Jalisco","municipio":"Guadalajara","zona":"Foraneo","calificacion":null,"estatusEval":"Pendiente","nps":null},{"id":84156,"fecha":"2026-07-03","servicio":"HOGAR","subservicio":"Checkup","categoria":"Emergencia","estatus":"Programado","entidad":"México","municipio":"Cuautitlán","zona":"Local","calificacion":null,"estatusEval":"Pendiente","nps":null},{"id":84213,"fecha":"2026-07-03","servicio":"HOGAR","subservicio":"Checkup","categoria":"Emergencia","estatus":"Cancelado al momento","entidad":"Ciudad de México","municipio":"La Magdalena Contreras","zona":"Local","calificacion":null,"estatusEval":"Inconclusa","nps":null},{"id":84227,"fecha":"2026-07-04","servicio":"HOGAR","subservicio":"Sin subservicio","categoria":"Emergencia","estatus":"Cancelado al momento","entidad":"Veracruz","municipio":"Veracruz","zona":"Foraneo","calificacion":null,"estatusEval":"Inconclusa","nps":null},{"id":84229,"fecha":"2026-07-04","servicio":"HOGAR","subservicio":"Checkup","categoria":"Emergencia","estatus":"Concluido","entidad":"Veracruz","municipio":"Veracruz","zona":"Foraneo","calificacion":5.0,"estatusEval":"Concluida","nps":10.0},{"id":84290,"fecha":"2026-07-05","servicio":"HOGAR","subservicio":"Sin subservicio","categoria":"Emergencia","estatus":"Cancelado posterior","entidad":"Ciudad de México","municipio":"Gustavo A. Madero","zona":"Local","calificacion":null,"estatusEval":"Pendiente","nps":null},{"id":84293,"fecha":"2026-07-05","servicio":"HOGAR","subservicio":"Examenes de Laboratorio Perfil 1","categoria":"Emergencia","estatus":"Programado","entidad":"Guanajuato","municipio":"León","zona":"Foraneo","calificacion":5.0,"estatusEval":"Concluida","nps":10.0},{"id":84294,"fecha":"2026-07-05","servicio":"HOGAR","subservicio":"Examenes de Laboratorio Perfil 1","categoria":"Emergencia","estatus":"Programado","entidad":"Guanajuato","municipio":"León","zona":"Local","calificacion":5.0,"estatusEval":"Concluida","nps":10.0},{"id":84304,"fecha":"2026-07-06","servicio":"HOGAR","subservicio":"Checkup","categoria":"Emergencia","estatus":"Programado","entidad":"México","municipio":"La Paz","zona":"Local","calificacion":null,"estatusEval":"Pendiente","nps":null},{"id":84308,"fecha":"2026-07-06","servicio":"HOGAR","subservicio":"Checkup","categoria":"Emergencia","estatus":"Programado","entidad":"Ciudad de México","municipio":"Cuauhtémoc","zona":"Local","calificacion":null,"estatusEval":"Pendiente","nps":null},{"id":84311,"fecha":"2026-07-06","servicio":"HOGAR","subservicio":"Checkup","categoria":"Emergencia","estatus":"Concluido","entidad":"Ciudad de México","municipio":"Cuauhtémoc","zona":"Local","calificacion":null,"estatusEval":"Pendiente","nps":null},{"id":84379,"fecha":"2026-07-06","servicio":"HOGAR","subservicio":"Checkup","categoria":"Emergencia","estatus":"Cancelado al momento","entidad":"Sinaloa","municipio":"Culiacán","zona":"Local","calificacion":null,"estatusEval":"Inconclusa","nps":null},{"id":84423,"fecha":"2026-07-06","servicio":"INSTALACION","subservicio":"Sin subservicio","categoria":"Emergencia","estatus":"Concluido","entidad":"Querétaro","municipio":"El Marqués","zona":"Foraneo","calificacion":5.0,"estatusEval":"Concluida","nps":10.0},{"id":84450,"fecha":"2026-07-07","servicio":"HOGAR","subservicio":"Checkup","categoria":"Emergencia","estatus":"Programado","entidad":"México","municipio":"Toluca","zona":"Local","calificacion":5.0,"estatusEval":"Concluida","nps":10.0},{"id":84619,"fecha":"2026-07-08","servicio":"HOGAR","subservicio":"Checkup","categoria":"Emergencia","estatus":"Programado","entidad":"Guanajuato","municipio":"León","zona":"Local","calificacion":null,"estatusEval":"Pendiente","nps":null},{"id":84673,"fecha":"2026-07-09","servicio":"HOGAR","subservicio":"Checkup","categoria":"Emergencia","estatus":"Programado","entidad":"México","municipio":"Tlalnepantla de Baz","zona":"Local","calificacion":5.0,"estatusEval":"Concluida","nps":10.0},{"id":84676,"fecha":"2026-07-09","servicio":"HOGAR","subservicio":"Checkup","categoria":"Emergencia","estatus":"Programado","entidad":"México","municipio":"Tlalnepantla de Baz","zona":"Local","calificacion":5.0,"estatusEval":"Concluida","nps":10.0},{"id":84712,"fecha":"2026-07-09","servicio":"HOGAR","subservicio":"Checkup","categoria":"Emergencia","estatus":"Cancelado al momento","entidad":"México","municipio":"Naucalpan de Juárez","zona":"Local","calificacion":null,"estatusEval":"Inconclusa","nps":null},{"id":84717,"fecha":"2026-07-09","servicio":"HOGAR","subservicio":"Examenes de Laboratorio Perfil 1","categoria":"Emergencia","estatus":"Programado","entidad":"México","municipio":"Toluca","zona":"Local","calificacion":5.0,"estatusEval":"Concluida","nps":10.0},{"id":84793,"fecha":"2026-07-10","servicio":"INSTALACION","subservicio":"Sin subservicio","categoria":"Emergencia","estatus":"Concluido","entidad":"Tabasco","municipio":"Comalcalco","zona":"Local","calificacion":5.0,"estatusEval":"Concluida","nps":10.0},{"id":84919,"fecha":"2026-07-13","servicio":"HOGAR","subservicio":"Mastografia","categoria":"Emergencia","estatus":"Programado","entidad":"Ciudad de México","municipio":"Benito Juárez","zona":"Local","calificacion":5.0,"estatusEval":"Concluida","nps":10.0},{"id":84954,"fecha":"2026-07-13","servicio":"INSTALACION","subservicio":"Sin subservicio","categoria":"Emergencia","estatus":"Cancelado al momento","entidad":"Ciudad de México","municipio":"La Magdalena Contreras","zona":"Local","calificacion":null,"estatusEval":"Inconclusa","nps":null},{"id":84958,"fecha":"2026-07-13","servicio":"HOGAR","subservicio":"Mastografia","categoria":"Emergencia","estatus":"Programado","entidad":"Ciudad de México","municipio":"Iztapalapa","zona":"Local","calificacion":null,"estatusEval":"Pendiente","nps":null},{"id":85012,"fecha":"2026-07-14","servicio":"HOGAR","subservicio":"Checkup","categoria":"Emergencia","estatus":"Programado","entidad":"Ciudad de México","municipio":"Tlalpan","zona":"Local","calificacion":null,"estatusEval":"Pendiente","nps":null},{"id":85018,"fecha":"2026-07-14","servicio":"HOGAR","subservicio":"MEDICINA GENERAL","categoria":"Emergencia","estatus":"Cancelado al momento","entidad":"México","municipio":"Toluca","zona":"Local","calificacion":null,"estatusEval":"Inconclusa","nps":null},{"id":85072,"fecha":"2026-07-14","servicio":"HOGAR","subservicio":"Sin subservicio","categoria":"Emergencia","estatus":"Cancelado al momento","entidad":"Ciudad de México","municipio":"Xochimilco","zona":"Local","calificacion":null,"estatusEval":"Inconclusa","nps":null},{"id":85093,"fecha":"2026-07-15","servicio":"HOGAR","subservicio":"COSTOS PREFERENCIALES EN SALUD DIGNA","categoria":"Conexion","estatus":"Concluido","entidad":"Chihuahua","municipio":"Chihuahua","zona":"Local","calificacion":1.0,"estatusEval":"Concluida","nps":0.0},{"id":85122,"fecha":"2026-07-15","servicio":"HOGAR","subservicio":"Checkup","categoria":"Emergencia","estatus":"Cancelado posterior","entidad":"Yucatán","municipio":"Mérida","zona":"Foraneo","calificacion":5.0,"estatusEval":"Concluida","nps":10.0},{"id":85131,"fecha":"2026-07-15","servicio":"HOGAR","subservicio":"Examenes de Laboratorio Perfil 1","categoria":"Emergencia","estatus":"Programado","entidad":"Ciudad de México","municipio":"Gustavo A. Madero","zona":"Local","calificacion":null,"estatusEval":"Pendiente","nps":null},{"id":85139,"fecha":"2026-07-15","servicio":"HOGAR","subservicio":"Checkup","categoria":"Emergencia","estatus":"Programado","entidad":"Yucatán","municipio":"Mérida","zona":"Foraneo","calificacion":5.0,"estatusEval":"Concluida","nps":5.0},{"id":85151,"fecha":"2026-07-15","servicio":"HOGAR","subservicio":"Sin subservicio","categoria":"Emergencia","estatus":"Cancelado posterior","entidad":"Ciudad de México","municipio":"Milpa Alta","zona":"Local","calificacion":5.0,"estatusEval":"Concluida","nps":10.0},{"id":85160,"fecha":"2026-07-15","servicio":"HOGAR","subservicio":"Checkup","categoria":"Emergencia","estatus":"Cancelado posterior","entidad":"México","municipio":"Atizapán de Zaragoza","zona":"Local","calificacion":null,"estatusEval":"Pendiente","nps":null},{"id":85181,"fecha":"2026-07-15","servicio":"HOGAR","subservicio":"Checkup","categoria":"Emergencia","estatus":"Programado","entidad":"Guanajuato","municipio":"Celaya","zona":"Foraneo","calificacion":5.0,"estatusEval":"Concluida","nps":10.0},{"id":85193,"fecha":"2026-07-15","servicio":"HOGAR","subservicio":"FAMILIAR","categoria":"Emergencia","estatus":"Concluido","entidad":"México","municipio":"Toluca","zona":"Local","calificacion":5.0,"estatusEval":"Concluida","nps":10.0},{"id":85265,"fecha":"2026-07-16","servicio":"HOGAR","subservicio":"Examenes de Laboratorio Perfil 1","categoria":"Emergencia","estatus":"Programado","entidad":"México","municipio":"Atizapán","zona":"Foraneo","calificacion":null,"estatusEval":"Pendiente","nps":null},{"id":85266,"fecha":"2026-07-16","servicio":"HOGAR","subservicio":"Sin subservicio","categoria":"Emergencia","estatus":"Cancelado al momento","entidad":"Ciudad de México","municipio":"Iztapalapa","zona":"Local","calificacion":null,"estatusEval":"Inconclusa","nps":null},{"id":85269,"fecha":"2026-07-16","servicio":"HOGAR","subservicio":"Examenes de Laboratorio Perfil 1","categoria":"Emergencia","estatus":"Programado","entidad":"México","municipio":"Atizapán de Zaragoza","zona":"Local","calificacion":null,"estatusEval":"Pendiente","nps":null},{"id":85657,"fecha":"2026-07-21","servicio":"HOGAR","subservicio":"Checkup","categoria":"Emergencia","estatus":"Programado","entidad":"México","municipio":"Chicoloapan","zona":"Local","calificacion":null,"estatusEval":"Pendiente","nps":null},{"id":85670,"fecha":"2026-07-21","servicio":"HOGAR","subservicio":"Examenes de Laboratorio Perfil 1","categoria":"Emergencia","estatus":"Cancelado al momento","entidad":"Yucatán","municipio":"Mérida","zona":"Local","calificacion":null,"estatusEval":"Inconclusa","nps":null},{"id":85720,"fecha":"2026-07-22","servicio":"HOGAR","subservicio":"Checkup","categoria":"Emergencia","estatus":"Programado","entidad":"Ciudad de México","municipio":"Coyoacán","zona":"Local","calificacion":null,"estatusEval":"Pendiente","nps":null},{"id":85742,"fecha":"2026-07-22","servicio":"HOGAR","subservicio":"Checkup","categoria":"Emergencia","estatus":"Cancelado posterior","entidad":"México","municipio":"Toluca","zona":"Foraneo","calificacion":1.0,"estatusEval":"Concluida","nps":0.0},{"id":85867,"fecha":"2026-07-23","servicio":"HOGAR","subservicio":"Checkup","categoria":"Emergencia","estatus":"Programado","entidad":"México","municipio":"Toluca","zona":"Local","calificacion":null,"estatusEval":"Pendiente","nps":null},{"id":85932,"fecha":"2026-07-24","servicio":"HOGAR","subservicio":"Checkup","categoria":"Emergencia","estatus":"Programado","entidad":"México","municipio":"Tlalnepantla de Baz","zona":"Local","calificacion":null,"estatusEval":"Pendiente","nps":null},{"id":86008,"fecha":"2026-07-25","servicio":"HOGAR","subservicio":"Checkup","categoria":"Emergencia","estatus":"Programado","entidad":"México","municipio":"Atizapán de Zaragoza","zona":"Local","calificacion":null,"estatusEval":"Pendiente","nps":null},{"id":86156,"fecha":"2026-07-28","servicio":"HOGAR","subservicio":"Checkup","categoria":"Emergencia","estatus":"Programado","entidad":"México","municipio":"Metepec","zona":"Local","calificacion":5.0,"estatusEval":"Concluida","nps":10.0},{"id":86374,"fecha":"2026-07-30","servicio":"HOGAR","subservicio":"Arrastre","categoria":"Emergencia","estatus":"Concluido","entidad":"México","municipio":"Naucalpan de Juárez","zona":"Local","calificacion":null,"estatusEval":"Pendiente","nps":null},{"id":86383,"fecha":"2026-07-30","servicio":"INSTALACION","subservicio":"Sin subservicio","categoria":"Emergencia","estatus":"Cancelado al momento","entidad":"Ciudad de México","municipio":"Benito Juárez","zona":"Local","calificacion":null,"estatusEval":"Inconclusa","nps":null},{"id":86391,"fecha":"2026-07-30","servicio":"INSTALACION","subservicio":"Sin subservicio","categoria":"Emergencia","estatus":"Cancelado al momento","entidad":"Chihuahua","municipio":"Carichí","zona":"Local","calificacion":null,"estatusEval":"Inconclusa","nps":null},{"id":86449,"fecha":"2026-07-30","servicio":"HOGAR","subservicio":"Limpieza","categoria":"Emergencia","estatus":"Cancelado al momento","entidad":"Campeche","municipio":"Campeche","zona":"Foraneo","calificacion":null,"estatusEval":"Inconclusa","nps":null},{"id":86458,"fecha":"2026-07-30","servicio":"HOGAR","subservicio":"Examenes de Laboratorio Perfil 1","categoria":"Emergencia","estatus":"Programado","entidad":"México","municipio":"Tlalnepantla de Baz","zona":"Local","calificacion":5.0,"estatusEval":"Concluida","nps":10.0},{"id":86481,"fecha":"2026-07-31","servicio":"INSTALACION","subservicio":"MEDICINA GENERAL","categoria":"Emergencia","estatus":"Concluido","entidad":"Sin especificar","municipio":"Sin especificar","zona":"Local","calificacion":null,"estatusEval":"Pendiente","nps":null},{"id":86503,"fecha":"2026-07-31","servicio":"HOGAR","subservicio":"Checkup","categoria":"Emergencia","estatus":"Programado","entidad":"México","municipio":"La Paz","zona":"Local","calificacion":null,"estatusEval":"Pendiente","nps":null},{"id":86550,"fecha":"2026-07-31","servicio":"HOGAR","subservicio":"Examenes de Laboratorio Perfil 1","categoria":"Emergencia","estatus":"Programado","entidad":"México","municipio":"Tlalnepantla de Baz","zona":"Local","calificacion":null,"estatusEval":"Pendiente","nps":null}]</script>
+<script>
+(function(){
+"use strict";
+
+const RAW = JSON.parse(document.getElementById('service-data').textContent);
+
+const COLORS = {
+  indigo:'#5862EB', indigoDeep:'#3B41B0', indigoPale:'#EEEFFD',
+  sun:'#FFD25C', sunDeep:'#E8AF2B',
+  green:'#1F9C7D', greenPale:'#E4F6F0',
+  coral:'#E75B54', coralPale:'#FCEAE9',
+  rose:'#C9577A', rosePale:'#FBEAF0',
+  ink:'#14162B', inkSoft:'#6B6E85', line:'#E5E5F1'
+};
+
+Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+Chart.defaults.font.size = 12;
+Chart.defaults.color = COLORS.inkSoft;
+Chart.defaults.plugins.legend.display = false;
+
+const estatusColor = {
+  'Concluido': COLORS.green,
+  'Programado': COLORS.indigo,
+  'Cancelado al momento': COLORS.coral,
+  'Cancelado posterior': COLORS.rose
+};
+const estatusClass = {
+  'Concluido':'Concluido','Programado':'Programado',
+  'Cancelado al momento':'CanceladoAlMomento','Cancelado posterior':'CanceladoPosterior'
+};
+
+let charts = {};
+
+// ---------- populate filter options ----------
+function unique(arr){ return [...new Set(arr)].sort((a,b)=>a.localeCompare(b,'es')); }
+
+function fillSelect(sel, values, allLabel){
+  values.forEach(v=>{
+    const opt = document.createElement('option');
+    opt.value = v; opt.textContent = v;
+    sel.appendChild(opt);
+  });
+}
+
+const fServicio = document.getElementById('fServicio');
+const fEntidad = document.getElementById('fEntidad');
+const fEstatus = document.getElementById('fEstatus');
+
+fillSelect(fServicio, unique(RAW.map(r=>r.servicio)));
+fillSelect(fEntidad, unique(RAW.map(r=>r.entidad)));
+fillSelect(fEstatus, unique(RAW.map(r=>r.estatus)));
+
+[fServicio, fEntidad, fEstatus].forEach(s=> s.addEventListener('change', render));
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  fServicio.value=''; fEntidad.value=''; fEstatus.value='';
+  document.getElementById('tableSearch').value='';
+  render();
+});
+document.getElementById('tableSearch').addEventListener('input', renderTable);
+
+function getFiltered(){
+  return RAW.filter(r=>{
+    if(fServicio.value && r.servicio !== fServicio.value) return false;
+    if(fEntidad.value && r.entidad !== fEntidad.value) return false;
+    if(fEstatus.value && r.estatus !== fEstatus.value) return false;
+    return true;
+  });
+}
+
+function fmtPct(n){ return (Math.round(n*10)/10).toFixed(1); }
+
+// ---------- KPIs ----------
+function renderKPIs(data){
+  const total = data.length;
+  const concluidos = data.filter(r=>r.estatus==='Concluido').length;
+  const programados = data.filter(r=>r.estatus==='Programado').length;
+  const cancelados = data.filter(r=>r.estatus.startsWith('Cancelado')).length;
+  const calificados = data.filter(r=>r.calificacion!=null);
+  const avgCal = calificados.length ? calificados.reduce((a,r)=>a+r.calificacion,0)/calificados.length : null;
+  const npsResp = data.filter(r=>r.nps!=null);
+  const avgNps = npsResp.length ? npsResp.reduce((a,r)=>a+r.nps,0)/npsResp.length : null;
+
+  const kpis = [
+    {label:'Total de servicios', value: total, sub: 'en el periodo filtrado', accent:'indigo'},
+    {label:'Concluidos', value: total? fmtPct(concluidos/total*100)+'%':'—', sub: concluidos+' de '+total, accent:'green'},
+    {label:'Programados', value: total? fmtPct(programados/total*100)+'%':'—', sub: programados+' de '+total, accent:'indigo'},
+    {label:'Cancelados', value: total? fmtPct(cancelados/total*100)+'%':'—', sub: cancelados+' de '+total, accent:'coral'},
+    {label:'Calificación promedio', value: avgCal!=null? avgCal.toFixed(1)+' <sup>/5</sup>':'—', sub: calificados.length+' encuestas con calificación', accent:'sun'},
+    {label:'NPS promedio', value: avgNps!=null? avgNps.toFixed(1)+' <sup>/10</sup>':'—', sub: npsResp.length+' respuestas NPS', accent:'sun'},
+  ];
+
+  const grid = document.getElementById('kpiGrid');
+  grid.innerHTML = kpis.map(k=>`
+    <div class="kpi accent-${k.accent}">
+      <div class="k-label">${k.label}</div>
+      <div class="k-value">${k.value}</div>
+      <div class="k-sub">${k.sub}</div>
+    </div>`).join('');
+}
+
+// ---------- funnel (header signature) ----------
+// The four estatus values are mutually exclusive and always add up to the
+// total, so this renders as a single bar whose segments are proportional
+// widths (flex-grow = count) — they always sum to exactly 100% of the track.
+function renderFunnel(data){
+  const total = data.length;
+  document.getElementById('funnelTotal').textContent = total;
+  const track = document.getElementById('funnelTrack');
+
+  if(total === 0){
+    track.innerHTML = `<div class="funnel-seg vacio"><span class="n mono">0</span><span class="l">SIN SERVICIOS EN ESTE FILTRO</span></div>`;
+    return;
+  }
+
+  const counts = {
+    'Programado': data.filter(r=>r.estatus==='Programado').length,
+    'Concluido': data.filter(r=>r.estatus==='Concluido').length,
+    'Cancelado al momento': data.filter(r=>r.estatus==='Cancelado al momento').length,
+    'Cancelado posterior': data.filter(r=>r.estatus==='Cancelado posterior').length,
+  };
+  const segs = [
+    {cls:'programados', key:'Programado', l:'PROGRAMADOS'},
+    {cls:'concluidos', key:'Concluido', l:'CONCLUIDOS'},
+    {cls:'cancelados-momento', key:'Cancelado al momento', l:'CANCEL. AL MOMENTO'},
+    {cls:'cancelados-posterior', key:'Cancelado posterior', l:'CANCEL. POSTERIOR'},
+  ].filter(s => counts[s.key] > 0);
+
+  track.innerHTML = segs.map(s=>{
+    const n = counts[s.key];
+    return `<div class="funnel-seg ${s.cls}" style="flex:${n} 1 0%;">
+      <span class="n mono">${n}</span><span class="l">${s.l} · ${fmtPct(n/total*100)}%</span>
+    </div>`;
+  }).join('');
+}
+
+// ---------- Fechas: servicios por día ----------
+function renderFechas(data){
+  const byDate = {};
+  data.forEach(r=>{ byDate[r.fecha] = (byDate[r.fecha]||0)+1; });
+  const dates = Object.keys(byDate).sort();
+  const counts = dates.map(d=>byDate[d]);
+  const labels = dates.map(d=>{
+    const dd = new Date(d+'T00:00:00');
+    return dd.getDate()+' jul';
+  });
+
+  if(charts.fechas) charts.fechas.destroy();
+  const ctx = document.getElementById('chartFechas');
+  const gradient = ctx.getContext('2d').createLinearGradient(0,0,0,240);
+  gradient.addColorStop(0, 'rgba(88,98,235,0.28)');
+  gradient.addColorStop(1, 'rgba(88,98,235,0.02)');
+
+  charts.fechas = new Chart(ctx, {
+    type:'line',
+    data:{ labels, datasets:[{
+      data: counts,
+      borderColor: COLORS.indigo,
+      backgroundColor: gradient,
+      fill:true, tension:0.35,
+      pointRadius:3, pointBackgroundColor:'#fff', pointBorderColor: COLORS.indigo, pointBorderWidth:2,
+      borderWidth:2.5,
+    }]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      interaction:{intersect:false, mode:'index'},
+      plugins:{
+        tooltip:{
+          backgroundColor: COLORS.ink, padding:10, cornerRadius:8, displayColors:false,
+          callbacks:{ label: c => c.parsed.y + ' servicio(s)' }
+        }
+      },
+      scales:{
+        x:{ grid:{display:false}, ticks:{maxRotation:0, autoSkip:true, maxTicksLimit:12} },
+        y:{ beginAtZero:true, ticks:{precision:0}, grid:{color:COLORS.line} }
+      }
+    }
+  });
+}
+
+// ---------- Tipo de servicio ----------
+function renderServicio(data){
+  const map = {};
+  data.forEach(r=>{
+    const key = r.servicio + ' · ' + r.subservicio;
+    map[key] = (map[key]||0)+1;
+  });
+  const entries = Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,9);
+  const labels = entries.map(e=>e[0]);
+  const values = entries.map(e=>e[1]);
+  const colors = entries.map(e=> e[0].startsWith('HOGAR') ? COLORS.indigo : COLORS.sunDeep);
+
+  if(charts.servicio) charts.servicio.destroy();
+  charts.servicio = new Chart(document.getElementById('chartServicio'), {
+    type:'bar',
+    data:{ labels, datasets:[{ data: values, backgroundColor: colors, borderRadius:6, maxBarThickness:18 }]},
+    options:{
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ tooltip:{ backgroundColor: COLORS.ink, padding:10, cornerRadius:8, displayColors:false } },
+      scales:{
+        x:{ beginAtZero:true, ticks:{precision:0}, grid:{color:COLORS.line} },
+        y:{ grid:{display:false}, ticks:{font:{size:11}} }
+      }
+    }
+  });
+}
+
+// ---------- Estatus donut ----------
+function renderEstatus(data){
+  const order = ['Concluido','Programado','Cancelado al momento','Cancelado posterior'];
+  const counts = order.map(o=> data.filter(r=>r.estatus===o).length);
+  const colors = order.map(o=> estatusColor[o]);
+
+  if(charts.estatus) charts.estatus.destroy();
+  charts.estatus = new Chart(document.getElementById('chartEstatus'), {
+    type:'doughnut',
+    data:{ labels: order, datasets:[{ data: counts, backgroundColor: colors, borderWidth:3, borderColor:'#fff' }]},
+    options:{
+      responsive:true, maintainAspectRatio:false, cutout:'68%',
+      plugins:{ tooltip:{ backgroundColor: COLORS.ink, padding:10, cornerRadius:8, displayColors:false } }
+    }
+  });
+
+  const legend = document.getElementById('estatusLegend');
+  const total = data.length || 1;
+  legend.innerHTML = order.map((o,i)=>`
+    <span class="legend-item"><span class="legend-dot" style="background:${colors[i]}"></span>${o} · ${counts[i]} (${fmtPct(counts[i]/total*100)}%)</span>
+  `).join('');
+}
+
+// ---------- Entidades ----------
+function renderEntidad(data){
+  const map = {};
+  data.forEach(r=>{ map[r.entidad] = (map[r.entidad]||0)+1; });
+  const entries = Object.entries(map).sort((a,b)=>b[1]-a[1]);
+  const labels = entries.map(e=>e[0]);
+  const values = entries.map(e=>e[1]);
+  const max = Math.max(...values, 1);
+  const colors = values.map(v => v===max ? COLORS.sunDeep : COLORS.indigo);
+
+  if(charts.entidad) charts.entidad.destroy();
+  charts.entidad = new Chart(document.getElementById('chartEntidad'), {
+    type:'bar',
+    data:{ labels, datasets:[{ data: values, backgroundColor: colors, borderRadius:6, maxBarThickness:26 }]},
+    options:{
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ tooltip:{ backgroundColor: COLORS.ink, padding:10, cornerRadius:8, displayColors:false } },
+      scales:{
+        x:{ beginAtZero:true, ticks:{precision:0}, grid:{color:COLORS.line} },
+        y:{ grid:{display:false} }
+      }
+    }
+  });
+}
+
+// ---------- Calificación ----------
+function renderCalificacion(data){
+  const cal = data.filter(r=>r.calificacion!=null).map(r=>r.calificacion);
+  const counts = [1,2,3,4,5].map(n=> cal.filter(c=>c===n).length);
+
+  if(charts.calif) charts.calif.destroy();
+  charts.calif = new Chart(document.getElementById('chartCalificacion'), {
+    type:'bar',
+    data:{ labels:['1★','2★','3★','4★','5★'], datasets:[{ data: counts, backgroundColor: COLORS.sunDeep, borderRadius:6, maxBarThickness:34 }]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ tooltip:{ backgroundColor: COLORS.ink, padding:10, cornerRadius:8, displayColors:false } },
+      scales:{ x:{ grid:{display:false} }, y:{ beginAtZero:true, ticks:{precision:0}, grid:{color:COLORS.line} } }
+    }
+  });
+}
+
+// ---------- NPS ----------
+function renderNPS(data){
+  const resp = data.filter(r=>r.nps!=null).map(r=>r.nps);
+  const promoters = resp.filter(n=>n>=9).length;
+  const passives = resp.filter(n=>n>=7 && n<9).length;
+  const detractors = resp.filter(n=>n<7).length;
+
+  if(charts.nps) charts.nps.destroy();
+  charts.nps = new Chart(document.getElementById('chartNPS'), {
+    type:'doughnut',
+    data:{
+      labels:['Promotores (9–10)','Pasivos (7–8)','Detractores (0–6)'],
+      datasets:[{ data:[promoters,passives,detractors], backgroundColor:[COLORS.green, COLORS.sun, COLORS.coral], borderWidth:3, borderColor:'#fff' }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false, cutout:'62%',
+      plugins:{
+        tooltip:{ backgroundColor: COLORS.ink, padding:10, cornerRadius:8, displayColors:false }
+      }
+    },
+    plugins:[{
+      id:'npsCenter',
+      afterDraw(chart){
+        const {ctx, chartArea:{left,right,top,bottom}} = chart;
+        const total = promoters+passives+detractors;
+        const score = total? Math.round(((promoters-detractors)/total)*100) : '—';
+        ctx.save();
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.font="700 22px 'Space Grotesk', sans-serif"; ctx.fillStyle=COLORS.ink;
+        ctx.fillText(score, (left+right)/2, (top+bottom)/2 - 6);
+        ctx.font="500 10px 'Inter', sans-serif"; ctx.fillStyle=COLORS.inkSoft;
+        ctx.fillText('NPS SCORE', (left+right)/2, (top+bottom)/2 + 14);
+        ctx.restore();
+      }
+    }]
+  });
+}
+
+// ---------- Estatus de evaluación ----------
+function renderEval(data){
+  const order = ['Concluida','Pendiente','Inconclusa'];
+  const colors = [COLORS.green, COLORS.indigo, COLORS.coral];
+  const counts = order.map(o=>data.filter(r=>r.estatusEval===o).length);
+
+  if(charts.eval) charts.eval.destroy();
+  charts.eval = new Chart(document.getElementById('chartEval'), {
+    type:'doughnut',
+    data:{ labels: order, datasets:[{ data: counts, backgroundColor: colors, borderWidth:3, borderColor:'#fff' }]},
+    options:{
+      responsive:true, maintainAspectRatio:false, cutout:'62%',
+      plugins:{
+        legend:{ display:true, position:'bottom', labels:{ boxWidth:9, boxHeight:9, padding:12, font:{size:11} } },
+        tooltip:{ backgroundColor: COLORS.ink, padding:10, cornerRadius:8, displayColors:false }
+      }
+    }
+  });
+}
+
+// ---------- Table ----------
+function starStr(n){ if(n==null) return '<span class="muted">—</span>'; return `<span class="stars">${'★'.repeat(n)}${'☆'.repeat(5-n)}</span>`; }
+
+function renderTable(){
+  const data = getFiltered();
+  const q = document.getElementById('tableSearch').value.trim().toLowerCase();
+  const filtered = q ? data.filter(r =>
+    String(r.id).includes(q) ||
+    r.municipio.toLowerCase().includes(q) ||
+    r.entidad.toLowerCase().includes(q) ||
+    r.subservicio.toLowerCase().includes(q)
+  ) : data;
+
+  const rows = filtered
+    .slice()
+    .sort((a,b)=> a.fecha < b.fecha ? 1 : -1)
+    .map(r=>{
+      const cls = estatusClass[r.estatus] || '';
+      return `<tr>
+        <td class="mono">${r.id}</td>
+        <td>${r.fecha}</td>
+        <td>${r.servicio}</td>
+        <td>${r.subservicio}</td>
+        <td>${r.entidad}</td>
+        <td>${r.municipio}</td>
+        <td>${r.zona}</td>
+        <td><span class="badge ${cls}">${r.estatus}</span></td>
+        <td>${starStr(r.calificacion!=null?Math.round(r.calificacion):null)}</td>
+        <td>${r.nps!=null? r.nps.toFixed(0) : '<span class="muted">—</span>'}</td>
+        <td>${r.estatusEval}</td>
+      </tr>`;
+    }).join('');
+
+  document.getElementById('tableBody').innerHTML = rows || `<tr><td colspan="11" class="muted" style="padding:22px;">Sin resultados para este filtro.</td></tr>`;
+  document.getElementById('tableCount').textContent = filtered.length + ' de ' + RAW.length + ' servicios';
+}
+
+// ---------- Main render ----------
+function render(){
+  const data = getFiltered();
+  document.getElementById('countPill').textContent = data.length + ' de ' + RAW.length + ' servicios';
+  renderKPIs(data);
+  renderFunnel(data);
+  renderFechas(data);
+  renderServicio(data);
+  renderEstatus(data);
+  renderEntidad(data);
+  renderCalificacion(data);
+  renderNPS(data);
+  renderEval(data);
+  renderTable();
+}
+
+render();
+})();
+</script>
+</body>
+</html>
