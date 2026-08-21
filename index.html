@@ -605,11 +605,11 @@ const ORIGINAL_DATA = JSON.parse(document.getElementById('service-data').textCon
 // ---------- Supabase configuration ----------
 // Reemplaza estos dos valores con los de TU proyecto de Supabase:
 // Settings → API → Project URL / anon public key. Ver README para el paso a paso completo.
-const SUPABASE_URL = 'https://bifplagwbrxenljdhhhd.supabase.co/rest/v1/';       // ej. 'https://abcdefghijk.supabase.co'
+const SUPABASE_URL = 'https://bifplagwbrxenljdhhhd.supabase.co';       // ej. 'https://abcdefghijk.supabase.co'
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpZnBsYWd3YnJ4ZW5samRoaGhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNDAyMTcsImV4cCI6MjEwMjkxNjIxN30._2Jnu5XSkAM1OkxSICDVtTwmH5Cz3Uhv24yO4qtaWxQ';
 const SUPABASE_TABLE = 'servicios';
 
-const supabaseReady = SUPABASE_URL !== 'https://bifplagwbrxenljdhhhd.supabase.co/rest/v1/' && SUPABASE_ANON_KEY !== 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpZnBsYWd3YnJ4ZW5samRoaGhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNDAyMTcsImV4cCI6MjEwMjkxNjIxN30._2Jnu5XSkAM1OkxSICDVtTwmH5Cz3Uhv24yO4qtaWxQ';
+const supabaseReady = SUPABASE_URL !== 'https://bifplagwbrxenljdhhhd.supabase.co' && SUPABASE_ANON_KEY !== 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpZnBsYWd3YnJ4ZW5samRoaGhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNDAyMTcsImV4cCI6MjEwMjkxNjIxN30._2Jnu5XSkAM1OkxSICDVtTwmH5Cz3Uhv24yO4qtaWxQ';
 const sb = supabaseReady ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 let RAW = ORIGINAL_DATA;
