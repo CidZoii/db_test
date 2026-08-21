@@ -605,11 +605,11 @@ const ORIGINAL_DATA = JSON.parse(document.getElementById('service-data').textCon
 // ---------- Supabase configuration ----------
 // Reemplaza estos dos valores con los de TU proyecto de Supabase:
 // Settings → API → Project URL / anon public key. Ver README para el paso a paso completo.
-const SUPABASE_URL = 'TU_SUPABASE_URL_AQUI';       // ej. 'https://abcdefghijk.supabase.co'
-const SUPABASE_ANON_KEY = 'TU_SUPABASE_ANON_KEY_AQUI';
+const SUPABASE_URL = 'https://bifplagwbrxenljdhhhd.supabase.co/rest/v1/';       // ej. 'https://abcdefghijk.supabase.co'
+const SUPABASE_ANON_KEY = 'sb_publishable_gNkFXBgA8sOvtXSH4E4PAQ_7Gl6OLWT';
 const SUPABASE_TABLE = 'servicios';
 
-const supabaseReady = SUPABASE_URL !== 'TU_SUPABASE_URL_AQUI' && SUPABASE_ANON_KEY !== 'TU_SUPABASE_ANON_KEY_AQUI';
+const supabaseReady = SUPABASE_URL !== 'https://bifplagwbrxenljdhhhd.supabase.co/rest/v1/' && SUPABASE_ANON_KEY !== 'sb_publishable_gNkFXBgA8sOvtXSH4E4PAQ_7Gl6OLWT';
 const sb = supabaseReady ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 let RAW = ORIGINAL_DATA;
