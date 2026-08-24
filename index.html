@@ -609,7 +609,7 @@ const SUPABASE_URL = 'https://bifplagwbrxenljdhhhd.supabase.co';       // ej. 'h
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpZnBsYWd3YnJ4ZW5samRoaGhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNDAyMTcsImV4cCI6MjEwMjkxNjIxN30._2Jnu5XSkAM1OkxSICDVtTwmH5Cz3Uhv24yO4qtaWxQ';
 const SUPABASE_TABLE = 'servicios';
 
-const supabaseReady = SUPABASE_URL !== 'TU_SUPABASE_URL_AQUI'' && SUPABASE_ANON_KEY !== 'TU_SUPABASE_ANON_KEY_AQUI';
+const supabaseReady = SUPABASE_URL !== 'TU_SUPABASE_URL_AQUI' && SUPABASE_ANON_KEY !== 'TU_SUPABASE_ANON_KEY_AQUI';
 const sb = supabaseReady ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 let RAW = ORIGINAL_DATA;
