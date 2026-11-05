@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ZOII · Panel de servicio — Interprotección -  Chedraui</title>
+<title>ZOII · Panel de servicio — Campaña Chedraui</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -294,6 +294,19 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
     margin-left:auto;
   }
   .reset-btn:hover{background:var(--indigo-pale);}
+  .pdf-btn{
+    border:1px solid var(--indigo);
+    background:var(--indigo);
+    color:#fff;
+    border-radius:9px;
+    padding:8px 14px;
+    font-size:13px;
+    cursor:pointer;
+    font-weight:600;
+    font-family:'Inter',sans-serif;
+  }
+  .pdf-btn:hover{background:var(--indigo-deep);}
+  .print-filters{display:none;}
   .count-pill{
     font-size:12.5px;color:var(--ink-soft);
     font-family:'IBM Plex Mono',monospace;
@@ -410,6 +423,23 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
     .funnel-seg{transition:none;}
   }
   :focus-visible{outline:2px solid var(--indigo);outline-offset:2px;}
+
+  /* ---------- Exportar a PDF (impresión) ---------- */
+  @page{ size:A4 landscape; margin:9mm; }
+  @media print{
+    html,body{-webkit-print-color-adjust:exact; print-color-adjust:exact; background:#fff;}
+    .databar,.loginbar,.filterbar,#uploadMsg,#detalle,footer,.bg-square{display:none !important;}
+    header.top{padding-top:16px;}
+    main{padding:14px 0 0; max-width:none;}
+    section{margin-bottom:14px;}
+    .card,.kpi{break-inside:avoid; page-break-inside:avoid;}
+    .kpi-grid{grid-template-columns:repeat(6,1fr);}
+    .grid-2{grid-template-columns:1.3fr 1fr;}
+    .grid-3{grid-template-columns:1fr 1fr 1fr;}
+    .print-filters{display:block; font-size:12px; color:var(--ink-soft); margin:0 0 12px; font-family:'IBM Plex Mono',monospace;}
+    .print-filters strong{color:var(--ink);}
+    .section-head{break-after:avoid; page-break-after:avoid;}
+  }
 </style>
 </head>
 <body>
@@ -469,15 +499,19 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
   <select id="fServicio" class="fbtn"><option value="">Tipo de servicio: todos</option></select>
   <select id="fEntidad" class="fbtn"><option value="">Entidad: todas</option></select>
   <select id="fEstatus" class="fbtn"><option value="">Estatus: todos</option></select>
+  <select id="fSucursal" class="fbtn"><option value="">Sucursal: todas</option></select>
   <span class="fb-label">Del</span>
   <input type="date" id="fFechaDesde" class="fbtn">
   <span class="fb-label">al</span>
   <input type="date" id="fFechaHasta" class="fbtn">
   <button class="reset-btn" id="resetBtn">Limpiar filtros</button>
+  <button class="pdf-btn" id="pdfBtn" type="button">Exportar PDF</button>
   <span class="count-pill" id="countPill"></span>
 </div>
 
 <main>
+
+  <div class="print-filters" id="printFilters"></div>
 
   <section id="kpis">
     <div class="section-head">
@@ -578,6 +612,7 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
           <thead>
             <tr>
               <th>Folio</th><th>Fecha</th><th>Servicio</th><th>Subservicio</th>
+              <th>ID Producto</th><th>Sucursal</th>
               <th>Entidad</th><th>Municipio</th><th>Zona</th><th>Estatus</th>
               <th>Calificación</th><th>NPS</th><th>Encuesta</th>
             </tr>
@@ -605,7 +640,7 @@ const ORIGINAL_DATA = JSON.parse(document.getElementById('service-data').textCon
 // ---------- Supabase configuration ----------
 // Reemplaza estos dos valores con los de TU proyecto de Supabase:
 // Settings → API → Project URL / anon public key. Ver README para el paso a paso completo.
-const SUPABASE_URL = 'https://bifplagwbrxenljdhhhd.supabase.co';       // ej. 'https://abcdefghijk.supabase.co'
+const SUPABASE_URL = 'https://bifplagwbrxenljdhhhd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpZnBsYWd3YnJ4ZW5samRoaGhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczNDAyMTcsImV4cCI6MjEwMjkxNjIxN30._2Jnu5XSkAM1OkxSICDVtTwmH5Cz3Uhv24yO4qtaWxQ';
 const SUPABASE_TABLE = 'servicios';
 
@@ -660,10 +695,12 @@ function fillSelect(sel, values){
 const fServicio = document.getElementById('fServicio');
 const fEntidad = document.getElementById('fEntidad');
 const fEstatus = document.getElementById('fEstatus');
+const fSucursal = document.getElementById('fSucursal');
 
 const SERVICIO_PLACEHOLDER = 'Tipo de servicio: todos';
 const ENTIDAD_PLACEHOLDER = 'Entidad: todas';
 const ESTATUS_PLACEHOLDER = 'Estatus: todos';
+const SUCURSAL_PLACEHOLDER = 'Sucursal: todas';
 
 function populateFilters(){
   fServicio.innerHTML = `<option value="">${SERVICIO_PLACEHOLDER}</option>`;
@@ -672,12 +709,14 @@ function populateFilters(){
   fillSelect(fServicio, unique(RAW.map(r=>r.servicio)));
   fillSelect(fEntidad, unique(RAW.map(r=>r.entidad)));
   fillSelect(fEstatus, unique(RAW.map(r=>r.estatus)));
+  fSucursal.innerHTML = `<option value="">${SUCURSAL_PLACEHOLDER}</option>`;
+  fillSelect(fSucursal, unique(RAW.map(r=>r.sucursal).filter(Boolean)));
 }
 populateFilters();
 
-[fServicio, fEntidad, fEstatus].forEach(s=> s.addEventListener('change', render));
+[fServicio, fEntidad, fEstatus, fSucursal].forEach(s=> s.addEventListener('change', render));
 document.getElementById('resetBtn').addEventListener('click', ()=>{
-  fServicio.value=''; fEntidad.value=''; fEstatus.value='';
+  fServicio.value=''; fEntidad.value=''; fEstatus.value=''; fSucursal.value='';
   document.getElementById('fFechaDesde').value=''; document.getElementById('fFechaHasta').value='';
   document.getElementById('tableSearch').value='';
   render();
@@ -699,6 +738,8 @@ const EXPECTED_COLUMNS = {
   zona: ['local/foraneo','local foraneo','zona'],
   calificacion: ['calificacion servicio','calificacion'],
   estatusEval: ['estatus evaluacion','estatus encuesta'],
+  sucursal: ['sucursal','nombre sucursal','tienda'],
+  idProducto: ['id producto','idproducto','id_producto','clave producto'],
   nps: ['nps'],
 };
 const REQUIRED_FIELDS = ['fecha','servicio','estatus'];
@@ -729,6 +770,12 @@ function toNumOrNull(value){
   if(value===null || value===undefined || value==='') return null;
   const n = typeof value === 'number' ? value : parseFloat(String(value).replace(',','.'));
   return isNaN(n) ? null : n;
+}
+
+function textOrNull(v){
+  if(v===null || v===undefined) return null;
+  const s = String(v).trim();
+  return s === '' ? null : s;
 }
 
 function parseWorkbookToRecords(workbook){
@@ -767,6 +814,8 @@ function parseWorkbookToRecords(workbook){
       zona: get('zona') ?? '',
       calificacion: toNumOrNull(get('calificacion')),
       estatusEval: get('estatusEval') ?? 'Sin dato',
+      sucursal: textOrNull(get('sucursal')),
+      idProducto: textOrNull(get('idProducto')),
       nps: toNumOrNull(get('nps')),
     };
   }).filter(r => r.fecha); // drop fully-blank trailing rows
@@ -818,6 +867,11 @@ function hideUploadMsg(){
 }
 
 // ---------- Fetch cumulative data from Supabase ----------
+// Nombres EXACTOS de las dos columnas nuevas en tu tabla de Supabase.
+// Si las creaste con otro nombre (por ejemplo sucursal / id_producto), cámbialos aquí.
+const DB_COL_SUCURSAL = 'Sucursal';
+const DB_COL_IDPRODUCTO = 'ID Producto';
+
 const DB_TO_RECORD = {
   id:'id', fecha:'fecha', servicio:'servicio', subservicio:'subservicio', categoria:'categoria',
   estatus:'estatus', entidad:'entidad', municipio:'municipio', zona:'zona',
@@ -827,6 +881,10 @@ const DB_TO_RECORD = {
 function dbRowToRecord(row){
   const out = {};
   Object.entries(DB_TO_RECORD).forEach(([dbCol, field])=>{ out[field] = row[dbCol]; });
+  const pick = (...names) => { for(const n of names){ if(row[n] !== undefined && row[n] !== null) return row[n]; } return null; };
+  out.sucursal = pick(DB_COL_SUCURSAL, 'sucursal', 'Sucursal');
+  out.idProducto = pick(DB_COL_IDPRODUCTO, 'id_producto', 'idproducto', 'ID Producto');
+  if(out.idProducto !== null) out.idProducto = String(out.idProducto);
   return out;
 }
 function recordToDbRow(rec){
@@ -834,6 +892,7 @@ function recordToDbRow(rec){
     id: rec.id, fecha: rec.fecha, servicio: rec.servicio, subservicio: rec.subservicio,
     categoria: rec.categoria, estatus: rec.estatus, entidad: rec.entidad, municipio: rec.municipio,
     zona: rec.zona, calificacion: rec.calificacion, estatus_eval: rec.estatusEval, nps: rec.nps,
+    [DB_COL_SUCURSAL]: rec.sucursal, [DB_COL_IDPRODUCTO]: rec.idProducto,
   };
 }
 
@@ -1000,6 +1059,7 @@ function getFiltered(){
     if(fServicio.value && r.servicio !== fServicio.value) return false;
     if(fEntidad.value && r.entidad !== fEntidad.value) return false;
     if(fEstatus.value && r.estatus !== fEstatus.value) return false;
+    if(fSucursal.value && r.sucursal !== fSucursal.value) return false;
     if(desde && r.fecha && r.fecha < desde) return false;
     if(hasta && r.fecha && r.fecha > hasta) return false;
     return true;
@@ -1287,7 +1347,9 @@ function renderTable(){
     String(r.id).includes(q) ||
     r.municipio.toLowerCase().includes(q) ||
     r.entidad.toLowerCase().includes(q) ||
-    r.subservicio.toLowerCase().includes(q)
+    r.subservicio.toLowerCase().includes(q) ||
+    String(r.sucursal||'').toLowerCase().includes(q) ||
+    String(r.idProducto||'').toLowerCase().includes(q)
   ) : data;
 
   const rows = filtered
@@ -1300,6 +1362,8 @@ function renderTable(){
         <td>${r.fecha}</td>
         <td>${r.servicio}</td>
         <td>${r.subservicio}</td>
+        <td>${r.idProducto || '<span class="muted">—</span>'}</td>
+        <td>${r.sucursal || '<span class="muted">—</span>'}</td>
         <td>${r.entidad}</td>
         <td>${r.municipio}</td>
         <td>${r.zona}</td>
@@ -1310,13 +1374,34 @@ function renderTable(){
       </tr>`;
     }).join('');
 
-  document.getElementById('tableBody').innerHTML = rows || `<tr><td colspan="11" class="muted" style="padding:22px;">Sin resultados para este filtro.</td></tr>`;
+  document.getElementById('tableBody').innerHTML = rows || `<tr><td colspan="13" class="muted" style="padding:22px;">Sin resultados para este filtro.</td></tr>`;
   document.getElementById('tableCount').textContent = filtered.length + ' de ' + RAW.length + ' servicios';
 }
 
 // ---------- Main render ----------
+function updatePrintSummary(data){
+  const parts = [];
+  if(fServicio.value) parts.push('Servicio: <strong>'+fServicio.value+'</strong>');
+  if(fEntidad.value) parts.push('Entidad: <strong>'+fEntidad.value+'</strong>');
+  if(fEstatus.value) parts.push('Estatus: <strong>'+fEstatus.value+'</strong>');
+  if(fSucursal.value) parts.push('Sucursal: <strong>'+fSucursal.value+'</strong>');
+  const d = document.getElementById('fFechaDesde').value, a = document.getElementById('fFechaHasta').value;
+  if(d || a) parts.push('Fechas: <strong>'+(d||'inicio')+' a '+(a||'hoy')+'</strong>');
+  const hoy = new Date().toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('printFilters').innerHTML =
+    'Reporte generado el '+hoy+' · <strong>'+data.length+'</strong> de '+RAW.length+' servicios'+
+    (parts.length ? ' · Filtros: '+parts.join(' · ') : ' · Sin filtros (vista completa)');
+}
+
+document.getElementById('pdfBtn').addEventListener('click', function(){
+  render();
+  // deja que las gráficas se redibujen al ancho de impresión
+  setTimeout(()=> window.print(), 250);
+});
+
 function render(){
   const data = getFiltered();
+  updatePrintSummary(data);
   document.getElementById('countPill').textContent = data.length + ' de ' + RAW.length + ' servicios';
   renderKPIs(data);
   renderFunnel(data);
